@@ -3,6 +3,7 @@ var fs = require('fs')
 var transformAst = require('transform-ast')
 var babylon = require('babylon')
 var through = require('through2')
+var splicer = require('labeled-stream-splicer')
 var pack = require('browser-pack')
 
 var importFunction = '_$browserifyDynamicImport'
@@ -13,12 +14,12 @@ var parseOpts = {
   allowReturnOutsideFunction: true
 }
 
-function helper (mappings) {
+function helper (mappings, prefix) {
   var cache = Object.create(null)
   return function load (index) {
     if (cache[index]) return cache[index]
     var url = mappings[index]
-    var receiver = '__browserifyDynamicImport__' + index
+    var receiver = prefix + index
     return cache[index] = new Promise(function (resolve, reject) {
       window[receiver] = resolve
       var s = document.createElement('script')
@@ -61,6 +62,7 @@ module.exports = function dynamicImportPlugin (b, opts) {
   var outname = function (chunk) {
     return 'chunk.' + chunk + '.js'
   }
+  var receiverPrefix = opts.prefix || '__browserifyDynamicImport__'
 
   var rows = []
   var rowsById = Object.create(null)
@@ -117,7 +119,7 @@ module.exports = function dynamicImportPlugin (b, opts) {
     rows.unshift({
       id: helperPath,
       index: helperPath,
-      source: `module.exports = (${helper})(${JSON.stringify(mappings)})`,
+      source: `module.exports = (${helper})(${JSON.stringify(mappings)}, ${JSON.stringify(receiverPrefix)})`,
       deps: {},
       indexDeps: {}
     })
@@ -155,22 +157,28 @@ module.exports = function dynamicImportPlugin (b, opts) {
   }
 
   function createPipeline (entry, depRows) {
-    var packer = pack({ raw: true })
-    packer.pipe(fs.createWriteStream(path.join( outputDir, outname(entry.index) )))
+    var pipeline = splicer.obj([
+      'pack', [ pack({ raw: true }) ],
+      'wrap', []
+    ])
 
-    packer.write({
+    b.emit('import.pipeline', pipeline)
+
+    pipeline.pipe(fs.createWriteStream(path.join( outputDir, outname(entry.index) )))
+
+    pipeline.write({
       id: 'entry' + entry.index,
-      source: '__browserifyDynamicImport__' + entry.index + '( require("a") )',
+      source: receiverPrefix + entry.index + '( require("a") )',
       entry: true,
       deps: { a: entry.id },
       indexDeps: { a: entry.index }
     })
-    packer.write(entry)
+    pipeline.write(entry)
     depRows.forEach(function (depId) {
       var dep = rowsById[depId]
-      packer.write(dep)
+      pipeline.write(dep)
     })
-    packer.end()
+    pipeline.end()
   }
 
   function gatherDependencies (row, arr) {
