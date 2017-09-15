@@ -5,6 +5,7 @@ var babylon = require('babylon')
 var through = require('through2')
 var splicer = require('labeled-stream-splicer')
 var pack = require('browser-pack')
+var helperSrc = fs.readFileSync(require.resolve('./helper'), 'utf8')
 
 var importFunction = '_$browserifyDynamicImport'
 var helperPath = 'browserify-dynamic-import/helper'
@@ -12,26 +13,6 @@ var parseOpts = {
   parser: babylon,
   ecmaVersion: 9,
   allowReturnOutsideFunction: true
-}
-
-function helper (mappings, prefix) {
-  var cache = Object.create(null)
-  return function load (index) {
-    if (cache[index]) return cache[index]
-    var url = mappings[index]
-    var receiver = prefix + index
-    return cache[index] = new Promise(function (resolve, reject) {
-      window[receiver] = resolve
-      var s = document.createElement('script')
-      s.async = true
-      s.type = 'application/javascript'
-      s.src = url
-      s.onerror = function () {
-        reject(new Error('Failed to load'))
-      }
-      document.body.appendChild(s)
-    })
-  }
 }
 
 function transform (file, opts) {
@@ -119,7 +100,9 @@ module.exports = function dynamicImportPlugin (b, opts) {
     rows.unshift({
       id: helperPath,
       index: helperPath,
-      source: `module.exports = (${helper})(${JSON.stringify(mappings)}, ${JSON.stringify(receiverPrefix)})`,
+      source: helperSrc
+        .replace('MAPPINGS', JSON.stringify(mappings))
+        .replace('PREFIX', JSON.stringify(receiverPrefix)),
       deps: {},
       indexDeps: {}
     })
