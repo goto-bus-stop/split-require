@@ -1,0 +1,30 @@
+{
+  "name": "browserify-dynamic-import",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/goto-bus-stop/browserify-dynamic-import.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/goto-bus-stop/browserify-dynamic-import/issues"
+  },
+  "homepage": "https://github.com/goto-bus-stop/browserify-dynamic-import#readme",
+  "dependencies": {
+    "babylon": "^6.18.0",
+    "browser-pack": "^6.0.2",
+    "transform-ast": "^2.1.0"
+  },
+  "devDependencies": {
+    "browserify": "^14.4.0",
+    "factor-bundle": "^2.5.0",
+    "tape": "^4.8.0"
+  }
+}
