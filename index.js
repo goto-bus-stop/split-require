@@ -7,7 +7,10 @@ var splicer = require('labeled-stream-splicer')
 var pack = require('browser-pack')
 var helperSrc = fs.readFileSync(require.resolve('./helper'), 'utf8')
 
+// import function name used internally only, to rewrite `import()` calls
+// so module-deps doesn't error out on them.
 var importFunction = '_$browserifyDynamicImport'
+
 var helperPath = 'browserify-dynamic-import/helper'
 var parseOpts = {
   parser: babylon,
@@ -28,6 +31,7 @@ function transform (file, opts) {
       plugins: ['dynamicImport']
     }), function (node) {
       if (node.type === 'Import') {
+        // rewrite to require() call to make module-deps pick up on this
         node.edit.update('require')
         node.parent.edit
           .prepend(importFunction + '(')
@@ -171,7 +175,12 @@ module.exports = function dynamicImportPlugin (b, opts) {
 
     deps.forEach(function (id) {
       var dep = rowsById[id]
-      gatherDependencies(dep, arr)
+      // not sure why this is needed yet,
+      // sometimes `id` is the helper path and that doesnt exist at this point
+      // in the rowsById map
+      if (dep) {
+        gatherDependencies(dep, arr)
+      }
     })
 
     return arr
