@@ -2,12 +2,9 @@
 
 dynamic `import()` for browserify
 
-[![npm][npm-image]][npm-url]
 [![travis][travis-image]][travis-url]
 [![standard][standard-image]][standard-url]
 
-[npm-image]: https://img.shields.io/npm/v/browserify-dynamic-import.svg?style=flat-square
-[npm-url]: https://www.npmjs.com/package/browserify-dynamic-import
 [travis-image]: https://img.shields.io/travis/goto-bus-stop/browserify-dynamic-import.svg?style=flat-square
 [travis-url]: https://travis-ci.org/goto-bus-stop/browserify-dynamic-import
 [standard-image]: https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat-square
@@ -16,7 +13,7 @@ dynamic `import()` for browserify
 ## Install
 
 ```
-npm install browserify-dynamic-import
+npm install goto-bus-stop/browserify-dynamic-import
 ```
 
 ## Usage
