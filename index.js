@@ -170,10 +170,13 @@ module.exports = function dynamicImportPlugin (b, opts) {
     pipeline.end()
   }
 
+  function values (object) {
+    return Object.keys(object).map(function (k) { return object[k] })
+  }
   function gatherDependencies (row, arr) {
-    var deps = Object.values(row.indexDeps)
+    var deps = values(row.indexDeps)
     arr = arr || []
-    arr.push(...deps)
+    arr.push.apply(arr, deps)
 
     deps.forEach(function (id) {
       var dep = rowsById[id]
