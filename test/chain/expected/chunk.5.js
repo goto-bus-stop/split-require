@@ -8,7 +8,4 @@ module.exports = function () {
   })
 }
 
-},{"../../helper.js":1}],6:[function(require,module,exports){
-module.exports = 'this is d'
-
-},{}]},{},["entry5"]);
+},{"../../helper.js":1}]},{},["entry5"]);

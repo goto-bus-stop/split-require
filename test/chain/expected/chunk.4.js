@@ -7,7 +7,4 @@ _$browserifyDynamicImport(6).then(function (exports) {
 })
 module.exports = 'hello from b'
 
-},{"../../helper.js":1}],6:[function(require,module,exports){
-module.exports = 'this is d'
-
-},{}]},{},["entry4"]);
+},{"../../helper.js":1}]},{},["entry4"]);

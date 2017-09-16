@@ -70,52 +70,72 @@ module.exports = function dynamicImportPlugin (b, opts) {
       }
     })
 
-    row.source = result.toString()
+    row.transformable = result
     rows.push(row)
     rowsById[row.index] = row
 
     cb(null)
   }
+
   function onend (cb) {
     var pipelines = []
     var mappings = {}
-    for (var i = 0; i < imports.length; i++) {
-      var row = rowsById[imports[i].row]
-      var dep = rowsById[imports[i].dep]
-      var depRows = gatherDependencies(dep)
+
+    // Remove dynamic imports from row dependencies.
+    imports.forEach(function (imp) {
+      var row = rowsById[imp.row]
+      var dep = rowsById[imp.dep]
       deleteValue(row.deps, dep.id)
       deleteValue(row.indexDeps, dep.index)
+    })
 
-      var chunkName = outname(dep.index)
-      mappings[dep.index] = chunkName
-
-      pipelines.push({
-        entry: dep,
-        rows: depRows
-      })
-    }
-
-    var helperRow = rows.find(function (r) { return r.file === helperPath })
-    helperRow.source = helperRow.source
-      .replace('MAPPINGS', JSON.stringify(mappings))
-      .replace('PREFIX', JSON.stringify(receiverPrefix))
-
-    function deleteValue (obj, val) {
-      for (var i in obj) {
-        if (obj.hasOwnProperty(i)) {
-          if (obj[i] === val) delete obj[i]
-        }
-      }
-    }
-
+    // Collect rows that should be in the main bundle.
     var mainRows = []
     rows.filter(function (row) { return row.entry }).forEach(function (row) {
       mainRows.push(row.index)
       gatherDependencies(row, mainRows)
     })
 
+    // Define pipelines
+    imports.forEach(function (imp) {
+      var row = rowsById[imp.row]
+      var depEntry = rowsById[imp.dep]
+      var node = imp.node
+      if (mainRows.includes(depEntry.index)) {
+        // this entry point is also non-dynamically required by the main bundle.
+        // we should not move it into a dynamic bundle.
+        node.update('Promise.resolve().then(function () { return require(' + JSON.stringify(depEntry.id) + ') })')
+        row.deps[depEntry.id] = depEntry.id
+        row.indexDeps[depEntry.id] = depEntry.index
+        return
+      }
+
+      var chunkName = outname(depEntry.index)
+      mappings[depEntry.index] = chunkName
+
+      var depRows = gatherDependencies(depEntry)
+      pipelines.push({
+        entry: depEntry,
+        rows: depRows
+      })
+    })
+
+    rows.forEach(function (row) {
+      if (row.transformable) {
+        row.source = row.transformable.toString()
+      }
+    })
+
+    var helperRow = rows.find(function (r) { return r.file === helperPath })
+    helperRow.source = helperRow.source
+      .replace('MAPPINGS', JSON.stringify(mappings))
+      .replace('PREFIX', JSON.stringify(receiverPrefix))
+
     pipelines.forEach(function (pipeline) {
       pipeline.rows = pipeline.rows.filter(function (id) {
+        // If a row required by this dynamic bundle also already exists in the main bundle,
+        // expose it from the main bundle and use it from there instead of including it in
+        // both the main and the dynamic bundles.
         if (mainRows.includes(id)) {
           rowsById[id].expose = true
           return false
@@ -194,5 +214,13 @@ module.exports = function dynamicImportPlugin (b, opts) {
     node.edit.update(importFunction + '(' + JSON.stringify(resolved) + ')')
 
     queueDynamicImport(row.index, resolved, node)
+  }
+}
+
+function deleteValue (obj, val) {
+  for (var i in obj) {
+    if (obj.hasOwnProperty(i)) {
+      if (obj[i] === val) delete obj[i]
+    }
   }
 }

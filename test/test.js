@@ -38,9 +38,15 @@ function testFixture (t, name, opts, message, next) {
 test('basic', function (t) {
   testFixture(t, 'basic', {}, 'should work, and not duplicate the ./xyz module', t.end)
 })
+
 test('chain', function (t) {
   testFixture(t, 'chain', {}, 'shoud work with dynamic imports in dynamically imported modules', t.end)
 })
+
+test('also-required', function (t) {
+  testFixture(t, 'also-required', {}, 'import() should work on modules that are already included in the same bundle for some other reason', t.end)
+})
+
 test('flat', function (t) {
   testFixture(t, 'flat', {
     plugin: function (b) {
