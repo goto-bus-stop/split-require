@@ -2,6 +2,8 @@
 
 dynamic `import()` for browserify
 
+Lazy load the parts of your app that are not immediately used, to make the initial load faster.
+
 [![travis][travis-image]][travis-url]
 [![standard][standard-image]][standard-url]
 
@@ -22,6 +24,46 @@ npm install goto-bus-stop/browserify-dynamic-import
 browserify ./entry -p [ browserify-dynamic-import --dir /output/directory ]
   > /output/directory/bundle.js
 ```
+
+### Options
+
+#### `--dir`
+
+Set the folder to output dynamic bundles to.
+
+#### `--prefix`
+
+Prefix for the function names that are used to load dynamic bundles.
+Defaults to `__browserifyDynamicImport__`, which is probably safe.
+
+## What?
+
+This plugin takes source files with `import()` calls like:
+
+```js
+var html = require('choo/html')
+var app = require('choo')()
+
+app.route('/', mainView)
+app.mount('body')
+
+var component
+function mainView () {
+  return html`<body>
+    ${component ? component.render() : html`
+      <h1>Loading</h1>
+    `}
+  </body>`
+}
+
+import('./SomeComponent').then(function (SomeComponent) {
+  component = new SomeComponent()
+  app.emitter.emit('render')
+})
+```
+
+And splits off `import()`ed files into their own bundles, that will be dynamically loaded at runtime.
+In this case, a main bundle would be created including `choo`, `choo/html` and the above file, and a second bundle would be created for the `SomeComponent.js` file and its dependencies.
 
 ## License
 
