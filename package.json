@@ -1,22 +1,10 @@
 {
   "name": "browserify-dynamic-import",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "standard && tape test/test.js | tap-diff"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/goto-bus-stop/browserify-dynamic-import.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "MIT",
+  "description": " dynamic import() for browserify",
+  "version": "0.0.0",
   "bugs": {
     "url": "https://github.com/goto-bus-stop/browserify-dynamic-import/issues"
   },
-  "homepage": "https://github.com/goto-bus-stop/browserify-dynamic-import#readme",
   "dependencies": {
     "babylon": "^6.18.0",
     "browser-pack": "^6.0.2",
@@ -31,6 +19,17 @@
     "standard": "^10.0.3",
     "tap-diff": "^0.1.1",
     "tape": "^4.8.0"
+  },
+  "homepage": "https://github.com/goto-bus-stop/browserify-dynamic-import#readme",
+  "keywords": [],
+  "license": "MIT",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/goto-bus-stop/browserify-dynamic-import.git"
+  },
+  "scripts": {
+    "test": "standard && tape test/test.js | tap-diff"
   },
   "standard": {
     "ignore": [
