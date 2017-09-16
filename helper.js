@@ -1,3 +1,4 @@
+/* eslint-disable no-undef, no-return-assign */
 var mappings = MAPPINGS
 var cache = Object.create(null)
 

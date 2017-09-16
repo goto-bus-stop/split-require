@@ -87,7 +87,6 @@ module.exports = function dynamicImportPlugin (b, opts) {
     for (var i = 0; i < imports.length; i++) {
       var row = rowsById[imports[i].row]
       var dep = rowsById[imports[i].dep]
-      var node = imports[i].node
       var depRows = gatherDependencies(dep)
       deleteValue(row.deps, dep.id)
       deleteValue(row.indexDeps, dep.index)
@@ -113,8 +112,10 @@ module.exports = function dynamicImportPlugin (b, opts) {
     rowsById[helperPath] = rows[0]
 
     function deleteValue (obj, val) {
-      for (var i in obj) if (obj.hasOwnProperty(i)) {
-        if (obj[i] === val) delete obj[i]
+      for (var i in obj) {
+        if (obj.hasOwnProperty(i)) {
+          if (obj[i] === val) delete obj[i]
+        }
       }
     }
 
@@ -151,7 +152,8 @@ module.exports = function dynamicImportPlugin (b, opts) {
 
     b.emit('import.pipeline', pipeline)
 
-    pipeline.pipe(fs.createWriteStream(path.join( outputDir, outname(entry.index) )))
+    var filename = path.join(outputDir, outname(entry.index))
+    pipeline.pipe(fs.createWriteStream(filename))
 
     pipeline.write({
       id: 'entry' + entry.index,
