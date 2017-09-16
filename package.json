@@ -12,6 +12,7 @@
     "transform-ast": "^2.1.0"
   },
   "devDependencies": {
+    "browser-pack-flat": "^2.5.0",
     "browserify": "^14.4.0",
     "factor-bundle": "^2.5.0",
     "mkdirp": "^0.5.1",
