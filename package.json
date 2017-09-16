@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "standard && tape test/test.js | tap-spec"
+    "test": "standard && tape test/test.js | tap-diff"
   },
   "repository": {
     "type": "git",
@@ -26,8 +26,10 @@
   "devDependencies": {
     "browserify": "^14.4.0",
     "factor-bundle": "^2.5.0",
+    "mkdirp": "^0.5.1",
+    "read-file-tree": "^1.0.0",
     "standard": "^10.0.3",
-    "tap-spec": "^4.1.1",
+    "tap-diff": "^0.1.1",
     "tape": "^4.8.0"
   },
   "standard": {
