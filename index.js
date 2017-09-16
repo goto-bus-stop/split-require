@@ -5,13 +5,12 @@ var babylon = require('babylon')
 var through = require('through2')
 var splicer = require('labeled-stream-splicer')
 var pack = require('browser-pack')
-var helperSrc = fs.readFileSync(require.resolve('./helper'), 'utf8')
 
 // import function name used internally only, to rewrite `import()` calls
 // so module-deps doesn't error out on them.
 var importFunction = '_$browserifyDynamicImport'
 
-var helperPath = 'browserify-dynamic-import/helper'
+var helperPath = require.resolve('./helper')
 var parseOpts = {
   parser: babylon,
   ecmaVersion: 9,
@@ -26,16 +25,23 @@ function transform (file, opts) {
     next()
   }
   function onend (next) {
-    var result = transformAst(source, Object.assign({}, parseOpts, {
+    var moduleOpts = Object.assign({}, parseOpts, {
       sourceType: 'module',
       plugins: ['dynamicImport']
-    }), function (node) {
+    })
+    var hasImport = false
+    var result = transformAst(source, moduleOpts, function (node) {
       if (node.type === 'Import') {
         // rewrite to require() call to make module-deps pick up on this
         node.edit.update('require')
         node.parent.edit
           .prepend(importFunction + '(')
           .append(')')
+        hasImport = true
+      }
+      if (node.type === 'Program' && hasImport) {
+        var relative = path.relative(path.dirname(file), helperPath)
+        node.prepend('var ' + importFunction + ' = require(' + JSON.stringify(relative) + ');\n')
       }
     })
     next(null, result.toString())
@@ -52,26 +58,15 @@ module.exports = function dynamicImportPlugin (b, opts) {
   var rows = []
   var rowsById = Object.create(null)
   var imports = []
-  b.transform(transform, {
-    global: true,
-    browserify: b
-  })
+  b.transform(transform, { global: true })
   b.pipeline.get('label').push(through.obj(onwrite, onend))
 
   b._bpack.hasExports = true
 
   function onwrite (row, enc, cb) {
-    var hasImport = false
     var result = transformAst(row.source, parseOpts, function (node) {
       if (node.type === 'CallExpression' && node.callee.type === 'Identifier' && node.callee.name === importFunction) {
         processDynamicImport(row, node)
-        hasImport = true
-      }
-
-      if (node.type === 'Program' && hasImport) {
-        node.prepend('var _$import = require(' + JSON.stringify(helperPath) + ');\n')
-        row.deps[helperPath] = helperPath
-        row.indexDeps[helperPath] = helperPath
       }
     })
 
@@ -100,16 +95,10 @@ module.exports = function dynamicImportPlugin (b, opts) {
       })
     }
 
-    rows.unshift({
-      id: helperPath,
-      index: helperPath,
-      source: helperSrc
-        .replace('MAPPINGS', JSON.stringify(mappings))
-        .replace('PREFIX', JSON.stringify(receiverPrefix)),
-      deps: {},
-      indexDeps: {}
-    })
-    rowsById[helperPath] = rows[0]
+    var helperRow = rows.find(function (r) { return r.file === helperPath })
+    helperRow.source = helperRow.source
+      .replace('MAPPINGS', JSON.stringify(mappings))
+      .replace('PREFIX', JSON.stringify(receiverPrefix))
 
     function deleteValue (obj, val) {
       for (var i in obj) {
@@ -202,7 +191,7 @@ module.exports = function dynamicImportPlugin (b, opts) {
   function processDynamicImport (row, node) {
     var importPath = node.arguments[0].arguments[0].value
     var resolved = row.indexDeps[importPath]
-    node.edit.update('_$import(' + JSON.stringify(resolved) + ')')
+    node.edit.update(importFunction + '(' + JSON.stringify(resolved) + ')')
 
     queueDynamicImport(row.index, resolved, node)
   }

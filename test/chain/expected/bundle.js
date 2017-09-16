@@ -1,15 +1,15 @@
-require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({2:[function(require,module,exports){
-var _$import = require("browserify-dynamic-import/helper");
-_$import(1).then(function (exports) {
+require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({3:[function(require,module,exports){
+var _$browserifyDynamicImport = require("../../helper.js");
+_$browserifyDynamicImport(2).then(function (exports) {
   console.log('a', exports)
 })
-_$import(3).then(function (exports) {
+_$browserifyDynamicImport(4).then(function (exports) {
   console.log('b', exports)
 })
 
-},{"browserify-dynamic-import/helper":"browserify-dynamic-import/helper"}],"browserify-dynamic-import/helper":[function(require,module,exports){
+},{"../../helper.js":1}],1:[function(require,module,exports){
 /* eslint-disable no-undef, no-return-assign */
-var mappings = {"1":"chunk.1.js","3":"chunk.3.js","4":"chunk.4.js","5":"chunk.5.js"}
+var mappings = {"2":"chunk.2.js","4":"chunk.4.js","5":"chunk.5.js","6":"chunk.6.js"}
 var cache = Object.create(null)
 
 module.exports = function load (index) {
@@ -29,4 +29,4 @@ module.exports = function load (index) {
   })
 }
 
-},{}]},{},[2]);
+},{}]},{},[3]);
