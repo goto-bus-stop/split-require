@@ -5,7 +5,6 @@ var babylon = require('babylon')
 var through = require('through2')
 var splicer = require('labeled-stream-splicer')
 var pack = require('browser-pack')
-var eos = require('end-of-stream')
 var runParallel = require('run-parallel')
 
 // import function name used internally only, to rewrite `import()` calls
@@ -165,8 +164,8 @@ module.exports = function dynamicImportPlugin (b, opts) {
 
     b.emit('import.pipeline', pipeline)
 
-    var filename = path.join(outputDir, outname(entry.index))
-    var writer = pipeline.pipe(fs.createWriteStream(filename))
+    var tempname = path.join(outputDir, '.browserify-dynamic-chunk-' + entry.id + '-' + Date.now())
+    var writer = pipeline.pipe(fs.createWriteStream(tempname))
 
     pipeline.write(makeDynamicEntryRow(entry))
     pipeline.write(entry)
@@ -176,9 +175,15 @@ module.exports = function dynamicImportPlugin (b, opts) {
     })
     pipeline.end()
 
-    eos(writer, function (err) {
-      if (err) return cb(err)
-      cb(null, { entry: entryId, filename: outname(entry.index) })
+    pipeline.on('error', cb)
+    writer.on('error', cb)
+    writer.on('close', function () {
+      var basename = outname(entry.index)
+      var finalname = path.join(outputDir, basename)
+      fs.rename(tempname, finalname, function (err) {
+        if (err) return cb(err)
+        cb(null, { entry: entryId, filename: basename })
+      })
     })
   }
 

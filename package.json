@@ -8,7 +8,6 @@
   "dependencies": {
     "babylon": "^6.18.0",
     "browser-pack": "^6.0.2",
-    "end-of-stream": "^1.4.0",
     "labeled-stream-splicer": "^2.0.0",
     "run-parallel": "^1.1.6",
     "transform-ast": "^2.1.0"
