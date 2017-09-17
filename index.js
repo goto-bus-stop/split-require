@@ -53,6 +53,7 @@ module.exports = function dynamicImportPlugin (b, opts) {
   var outname = function (chunk) {
     return 'chunk.' + chunk + '.js'
   }
+  var publicPath = opts.public || './'
   var receiverPrefix = opts.prefix || '__browserifyDynamicImport__'
 
   var rows = []
@@ -111,7 +112,7 @@ module.exports = function dynamicImportPlugin (b, opts) {
       }
 
       var chunkName = outname(depEntry.index)
-      mappings[depEntry.index] = chunkName
+      mappings[depEntry.index] = path.join(publicPath, chunkName)
 
       var depRows = gatherDependencies(depEntry)
       pipelines.push({

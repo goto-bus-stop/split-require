@@ -36,6 +36,11 @@ Set the folder to output dynamic bundles to.
 Prefix for the function names that are used to load dynamic bundles.
 Defaults to `__browserifyDynamicImport__`, which is probably safe.
 
+### `--public`
+
+Public path to load chunks from.
+Defaults to `./`, so chunk #1 is loaded as `./chunk.1.js`.
+
 ## What?
 
 This plugin takes source files with `import()` calls like:

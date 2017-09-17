@@ -58,3 +58,9 @@ test('flat', function (t) {
     }
   }, 'works together with browser-pack-flat', t.end)
 })
+
+test('public-path', function (t) {
+  testFixture(t, 'public-path', {
+    public: 'http://localhost:9966/build/'
+  }, 'chunks can be loaded from a configurable base url', t.end)
+})
