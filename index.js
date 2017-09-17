@@ -5,6 +5,8 @@ var babylon = require('babylon')
 var through = require('through2')
 var splicer = require('labeled-stream-splicer')
 var pack = require('browser-pack')
+var eos = require('end-of-stream')
+var runParallel = require('run-parallel')
 
 // import function name used internally only, to rewrite `import()` calls
 // so module-deps doesn't error out on them.
@@ -79,13 +81,11 @@ module.exports = function dynamicImportPlugin (b, opts) {
   }
 
   function onend (cb) {
-    var pipelines = []
-    var mappings = {}
-
+    var self = this
     // Remove dynamic imports from row dependencies.
     imports.forEach(function (imp) {
-      var row = rowsById[imp.row]
-      var dep = rowsById[imp.dep]
+      var row = getRow(imp.row)
+      var dep = getRow(imp.dep)
       deleteValue(row.deps, dep.id)
       deleteValue(row.indexDeps, dep.index)
     })
@@ -94,13 +94,14 @@ module.exports = function dynamicImportPlugin (b, opts) {
     var mainRows = []
     rows.filter(function (row) { return row.entry }).forEach(function (row) {
       mainRows.push(row.index)
-      gatherDependencies(row, mainRows)
+      gatherDependencyIds(row, mainRows)
     })
 
-    // Define pipelines
+    // Find which rows belong in which dynamic bundle.
+    var dynamicBundles = []
     imports.forEach(function (imp) {
-      var row = rowsById[imp.row]
-      var depEntry = rowsById[imp.dep]
+      var row = getRow(imp.row)
+      var depEntry = getRow(imp.dep)
       var node = imp.node
       if (mainRows.includes(depEntry.index)) {
         // this entry point is also non-dynamically required by the main bundle.
@@ -110,51 +111,53 @@ module.exports = function dynamicImportPlugin (b, opts) {
         row.indexDeps[depEntry.id] = depEntry.index
         return
       }
-
-      var chunkName = outname(depEntry.index)
-      mappings[depEntry.index] = path.join(publicPath, chunkName)
-
-      var depRows = gatherDependencies(depEntry)
-      pipelines.push({
-        entry: depEntry,
-        rows: depRows
+      var depRows = gatherDependencyIds(depEntry).filter(function (id) {
+        // If a row required by this dynamic bundle also already exists in the main bundle,
+        // expose it from the main bundle and use it from there instead of including it in
+        // both the main and the dynamic bundles.
+        if (mainRows.includes(id)) {
+          getRow(id).expose = true
+          return false
+        }
+        return true
       })
+
+      dynamicBundles.push({ entry: depEntry.index, rows: depRows })
     })
 
+    // No more source transforms after this point, save transformed source code
     rows.forEach(function (row) {
       if (row.transformable) {
         row.source = row.transformable.toString()
       }
     })
 
-    var helperRow = rows.find(function (r) { return r.file === helperPath })
-    helperRow.source = helperRow.source
-      .replace('MAPPINGS', JSON.stringify(mappings))
-      .replace('PREFIX', JSON.stringify(receiverPrefix))
-
-    pipelines.forEach(function (pipeline) {
-      pipeline.rows = pipeline.rows.filter(function (id) {
-        // If a row required by this dynamic bundle also already exists in the main bundle,
-        // expose it from the main bundle and use it from there instead of including it in
-        // both the main and the dynamic bundles.
-        if (mainRows.includes(id)) {
-          rowsById[id].expose = true
-          return false
-        }
-        return true
-      })
-
-      createPipeline(pipeline.entry, pipeline.rows)
+    var pipelines = dynamicBundles.map(function (pipeline) {
+      return createPipeline.bind(null, pipeline.entry, pipeline.rows)
     })
 
-    new Set(mainRows).forEach(function (id) {
-      this.push(rowsById[id])
-    }, this)
+    runParallel(pipelines, function (err, mappings) {
+      if (err) return cb(err)
+      mappings = mappings.reduce(function (obj, x) {
+        obj[x.entry] = path.join(publicPath, x.filename)
+        return obj
+      }, {})
 
-    cb(null)
+      var helperRow = rows.find(function (r) { return r.file === helperPath })
+      helperRow.source = helperRow.source
+        .replace('MAPPINGS', JSON.stringify(mappings))
+        .replace('PREFIX', JSON.stringify(receiverPrefix))
+
+      new Set(mainRows).forEach(function (id) {
+        self.push(getRow(id))
+      })
+
+      cb(null)
+    })
   }
 
-  function createPipeline (entry, depRows) {
+  function createPipeline (entryId, depRows, cb) {
+    var entry = getRow(entryId)
     var pipeline = splicer.obj([
       'pack', [ pack({ raw: true }) ],
       'wrap', []
@@ -163,27 +166,26 @@ module.exports = function dynamicImportPlugin (b, opts) {
     b.emit('import.pipeline', pipeline)
 
     var filename = path.join(outputDir, outname(entry.index))
-    pipeline.pipe(fs.createWriteStream(filename))
+    var writer = pipeline.pipe(fs.createWriteStream(filename))
 
-    pipeline.write({
-      id: 'entry' + entry.index,
-      source: receiverPrefix + entry.index + '( require("a") )',
-      entry: true,
-      deps: { a: entry.id },
-      indexDeps: { a: entry.index }
-    })
+    pipeline.write(makeDynamicEntryRow(entry))
     pipeline.write(entry)
     depRows.forEach(function (depId) {
-      var dep = rowsById[depId]
+      var dep = getRow(depId)
       pipeline.write(dep)
     })
     pipeline.end()
+
+    eos(writer, function (err) {
+      if (err) return cb(err)
+      cb(null, { entry: entryId, filename: outname(entry.index) })
+    })
   }
 
   function values (object) {
     return Object.keys(object).map(function (k) { return object[k] })
   }
-  function gatherDependencies (row, arr) {
+  function gatherDependencyIds (row, arr) {
     var deps = values(row.indexDeps)
     arr = arr || []
     arr.push.apply(arr, deps)
@@ -194,7 +196,7 @@ module.exports = function dynamicImportPlugin (b, opts) {
       // sometimes `id` is the helper path and that doesnt exist at this point
       // in the rowsById map
       if (dep) {
-        gatherDependencies(dep, arr)
+        gatherDependencyIds(dep, arr)
       }
     })
 
@@ -215,6 +217,22 @@ module.exports = function dynamicImportPlugin (b, opts) {
     node.edit.update(importFunction + '(' + JSON.stringify(resolved) + ')')
 
     queueDynamicImport(row.index, resolved, node)
+  }
+
+  function getRow (id) {
+    return rowsById[id]
+  }
+
+  // Create a proxy module that will call the dynamic bundle receiver function
+  // with the dynamic entry point's exports.
+  function makeDynamicEntryRow (entry) {
+    return {
+      id: 'entry' + entry.index,
+      source: receiverPrefix + entry.index + '( require("a") )',
+      entry: true,
+      deps: { a: entry.id },
+      indexDeps: { a: entry.index }
+    }
   }
 }
 
