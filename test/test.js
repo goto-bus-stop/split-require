@@ -64,3 +64,16 @@ test('public-path', function (t) {
     public: 'http://localhost:9966/build/'
   }, 'chunks can be loaded from a configurable base url', t.end)
 })
+
+test('hash', function (t) {
+  testFixture(t, 'hash', {
+    chunkName: function (entry, pipeline, cb) {
+      var crypto = require('crypto')
+      var hash = crypto.createHash('sha512')
+      pipeline.on('data', function (chunk) { hash.update(chunk) })
+      pipeline.on('end', function () {
+        cb(null, hash.digest('hex').slice(0, 8) + '.js')
+      })
+    }
+  }, 'chunkName can be an asynchronous function', t.end)
+})

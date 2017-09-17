@@ -51,8 +51,8 @@ function transform (file, opts) {
 
 module.exports = function dynamicImportPlugin (b, opts) {
   var outputDir = opts.dir || './'
-  var outname = function (chunk) {
-    return 'chunk.' + chunk + '.js'
+  var outname = opts.chunkName || function (chunk) {
+    return 'chunk.' + chunk.index + '.js'
   }
   var publicPath = opts.public || './'
   var receiverPrefix = opts.prefix || '__browserifyDynamicImport__'
@@ -97,7 +97,7 @@ module.exports = function dynamicImportPlugin (b, opts) {
     })
 
     // Find which rows belong in which dynamic bundle.
-    var dynamicBundles = []
+    var dynamicBundles = Object.create(null)
     imports.forEach(function (imp) {
       var row = getRow(imp.row)
       var depEntry = getRow(imp.dep)
@@ -121,7 +121,7 @@ module.exports = function dynamicImportPlugin (b, opts) {
         return true
       })
 
-      dynamicBundles.push({ entry: depEntry.index, rows: depRows })
+      dynamicBundles[depEntry.index] = depRows
     })
 
     // No more source transforms after this point, save transformed source code
@@ -131,8 +131,8 @@ module.exports = function dynamicImportPlugin (b, opts) {
       }
     })
 
-    var pipelines = dynamicBundles.map(function (pipeline) {
-      return createPipeline.bind(null, pipeline.entry, pipeline.rows)
+    var pipelines = Object.keys(dynamicBundles).map(function (entry) {
+      return createPipeline.bind(null, entry, dynamicBundles[entry])
     })
 
     runParallel(pipelines, function (err, mappings) {
@@ -176,13 +176,23 @@ module.exports = function dynamicImportPlugin (b, opts) {
     pipeline.end()
 
     pipeline.on('error', cb)
-    writer.on('error', cb)
-    writer.on('close', function () {
-      var basename = outname(entry.index)
-      var finalname = path.join(outputDir, basename)
-      fs.rename(tempname, finalname, function (err) {
+
+    runParallel([
+      function (cb) {
+        var basename = outname(entry, pipeline, cb)
+        if (basename) cb(null, basename)
+      },
+      function (cb) {
+        writer.on('error', cb)
+        writer.on('close', function () { cb(null) })
+      }
+    ], function (err, results) {
+      if (err) return cb(err)
+      var name = results[0]
+      var finalname = path.join(outputDir, name)
+      fs.rename(writer.path, finalname, function (err) {
         if (err) return cb(err)
-        cb(null, { entry: entryId, filename: basename })
+        cb(null, { entry: entryId, filename: name })
       })
     })
   }
