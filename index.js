@@ -212,14 +212,17 @@ module.exports = function dynamicImportPlugin (b, opts) {
   function gatherDependencyIds (row, arr) {
     var deps = values(row.indexDeps)
     arr = arr || []
-    arr.push.apply(arr, deps)
 
     deps.forEach(function (id) {
       var dep = rowsById[id]
+      if (!dep || arr.includes(dep.index)) {
+        return
+      }
       // not sure why this is needed yet,
       // sometimes `id` is the helper path and that doesnt exist at this point
       // in the rowsById map
       if (dep) {
+        arr.push(dep.index)
         gatherDependencyIds(dep, arr)
       }
     })
