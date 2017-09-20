@@ -65,7 +65,7 @@ module.exports = function dynamicImportPlugin (b, opts) {
   var rowsById = Object.create(null)
   var imports = []
   b.transform(transform, { global: true })
-  b.pipeline.get('label').push(through.obj(onwrite, onend))
+  b.pipeline.get('pack').unshift(through.obj(onwrite, onend))
 
   b._bpack.hasExports = true
 
