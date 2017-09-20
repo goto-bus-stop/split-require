@@ -61,13 +61,22 @@ module.exports = function dynamicImportPlugin (b, opts) {
   var publicPath = opts.public || './'
   var receiverPrefix = opts.prefix || '__browserifyDynamicImport__'
 
-  var rows = []
-  var rowsById = Object.create(null)
-  var imports = []
-  b.transform(transform, { global: true })
-  b.pipeline.get('pack').unshift(through.obj(onwrite, onend))
+  var rows
+  var rowsById
+  var imports
 
-  b._bpack.hasExports = true
+  b.transform(transform, { global: true })
+  b.on('reset', addHooks)
+  addHooks()
+
+  function addHooks () {
+    rows = []
+    rowsById = Object.create(null)
+    imports = []
+
+    b.pipeline.get('pack').unshift(through.obj(onwrite, onend))
+
+  }
 
   function onwrite (row, enc, cb) {
     var result = transformAst(row.source, parseOpts, function (node) {
@@ -93,6 +102,9 @@ module.exports = function dynamicImportPlugin (b, opts) {
       cb(null)
       return
     }
+
+    // Ensure the main bundle exports the dynamic import helper etc.
+    b._bpack.hasExports = true
 
     // Remove dynamic imports from row dependencies.
     imports.forEach(function (imp) {
