@@ -87,6 +87,17 @@ Defaults to `__browserifyDynamicImport__`, which is probably safe.
 Public path to load chunks from.
 Defaults to `./`, so chunk #1 is loaded as `./chunk.1.js`.
 
+### Events
+
+#### `b.on('import.pipeline', function (pipeline) {})`
+
+`browserify-dynamic-import` emits an event on the browserify instance for each [pipeline] it creates.
+
+`pipeline` is a [labeled-stream-splicer](https://github.com/browserify/labeled-stream-splicer) with labels:
+
+ - `'pack'` - [browser-pack](https://github.com/browserify/browser-pack)
+ - `'wrap'` - apply final wrapping
+
 ## What?
 
 This plugin takes source files with `import()` calls like:
@@ -115,6 +126,12 @@ import('./SomeComponent').then(function (SomeComponent) {
 
 And splits off `import()`ed files into their own bundles, that will be dynamically loaded at runtime.
 In this case, a main bundle would be created including `choo`, `choo/html` and the above file, and a second bundle would be created for the `SomeComponent.js` file and its dependencies.
+
+Note that this isn't 100% spec compliant.
+`import()` is an ES modules feature, not a CommonJS one.
+In CommonJS with this plugin, the exports object is the value of the `module.exports` of the imported module, so it may well be a function or some other non-object value.
+In ES modules, the exports object in `.then()` will always be an object, with a `.default` property for default exports and other properties for named exports.
+You'd never get a function back in `.then()` in native ES modules.
 
 ## License
 
