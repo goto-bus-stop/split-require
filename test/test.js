@@ -102,6 +102,10 @@ test('output stream', function (t) {
   }
 })
 
+test('without import()', function (t) {
+  testFixture(t, 'no-imports', {}, 'works when import() is not used', t.end)
+})
+
 test.skip('factor-bundle', function (t) {
   testFixture(t, 'factor-bundle', {
     plugin: function (b) {

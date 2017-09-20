@@ -19,7 +19,7 @@ var parseOpts = {
   allowReturnOutsideFunction: true
 }
 
-function transform (file, opts) {
+function transform (file) {
   var source = ''
   return through(onwrite, onend)
   function onwrite (chunk, enc, next) {
@@ -85,6 +85,15 @@ module.exports = function dynamicImportPlugin (b, opts) {
 
   function onend (cb) {
     var self = this
+
+    if (imports.length === 0) {
+      for (var i = 0; i < rows.length; i++) {
+        this.push(rows[i])
+      }
+      cb(null)
+      return
+    }
+
     // Remove dynamic imports from row dependencies.
     imports.forEach(function (imp) {
       var row = getRow(imp.row)
