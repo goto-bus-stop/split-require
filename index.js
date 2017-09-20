@@ -65,7 +65,7 @@ module.exports = function dynamicImportPlugin (b, opts) {
   var rowsById
   var imports
 
-  b.transform(transform, { global: true })
+  b.transform(transform)
   b.on('reset', addHooks)
   addHooks()
 
@@ -75,7 +75,6 @@ module.exports = function dynamicImportPlugin (b, opts) {
     imports = []
 
     b.pipeline.get('pack').unshift(through.obj(onwrite, onend))
-
   }
 
   function onwrite (row, enc, cb) {
