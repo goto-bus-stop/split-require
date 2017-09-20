@@ -56,6 +56,19 @@ function transform (file, opts) {
 }
 
 module.exports = function dynamicImportPlugin (b, opts) {
+  b.transform(transform)
+  b.on('reset', addHooks)
+  b.on('factor.pipeline', function (file, pipeline) {
+    pipeline.get('pack').unshift(createStream(b, opts))
+  })
+  addHooks()
+
+  function addHooks () {
+    b.pipeline.get('pack').unshift(createStream(b, opts))
+  }
+}
+
+function createStream (b, opts) {
   var outputDir = opts.dir || './'
   var outname = opts.filename || function (bundle) {
     return 'bundle.' + bundle.id + '.js'
@@ -66,21 +79,11 @@ module.exports = function dynamicImportPlugin (b, opts) {
   var publicPath = opts.public || './'
   var receiverPrefix = opts.prefix || '__browserifyDynamicImport__'
 
-  var rows
-  var rowsById
-  var imports
+  var rows = []
+  var rowsById = Object.create(null)
+  var imports = []
 
-  b.transform(transform)
-  b.on('reset', addHooks)
-  addHooks()
-
-  function addHooks () {
-    rows = []
-    rowsById = Object.create(null)
-    imports = []
-
-    b.pipeline.get('pack').unshift(through.obj(onwrite, onend))
-  }
+  return through.obj(onwrite, onend)
 
   function onwrite (row, enc, cb) {
     var result = transformAst(row.source, parseOpts, function (node) {

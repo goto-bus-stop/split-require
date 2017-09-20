@@ -12,15 +12,16 @@ function testFixture (t, name, opts, message, next) {
   var entry = path.join(__dirname, name, 'app.js')
   var expectedDir = path.join(__dirname, name, 'expected')
   var actualDir = path.join(__dirname, name, 'actual')
-  var plugin = opts.plugin || function () {}
+  var plugin = opts.plugin || function (b, opts) {
+    return b.plugin(dynamicImport, opts)
+  }
 
   opts.dir = actualDir
   rimraf.sync(actualDir)
   mkdirp.sync(actualDir)
 
   browserify(entry)
-    .plugin(plugin)
-    .plugin(dynamicImport, opts)
+    .plugin(plugin, opts)
     .bundle()
     .pipe(fs.createWriteStream(path.join(actualDir, 'bundle.js')))
     .on('error', t.fail)
@@ -48,12 +49,13 @@ test('also-required', function (t) {
 
 test('flat', function (t) {
   testFixture(t, 'flat', {
-    plugin: function (b) {
+    plugin: function (b, opts) {
       b.plugin('browser-pack-flat/plugin')
       b.on('import.pipeline', function (pipeline) {
         pipeline.get('pack').splice(0, 1,
           require('browser-pack-flat')({ raw: true }))
       })
+      b.plugin(dynamicImport, opts)
     }
   }, 'works together with browser-pack-flat', t.end)
 })
@@ -102,15 +104,42 @@ test('without import()', function (t) {
   testFixture(t, 'no-imports', {}, 'works when import() is not used', t.end)
 })
 
-test.skip('factor-bundle', function (t) {
-  testFixture(t, 'factor-bundle', {
-    plugin: function (b) {
-      b.plugin('factor-bundle', {
-        outputs: [
-          path.join(__dirname, 'factor-bundle/actual', 'entry1.js'),
-          path.join(__dirname, 'factor-bundle/actual', 'entry2.js')
-        ]
-      })
-    }
-  }, 'works together with factor-bundle', t.end)
+test('factor-bundle', function (t) {
+  var inputDir = path.join(__dirname, 'factor-bundle')
+  var actualDir = path.join(__dirname, 'factor-bundle/actual')
+  var expectedDir = path.join(__dirname, 'factor-bundle/expected')
+
+  rimraf.sync(actualDir)
+  mkdirp.sync(actualDir)
+
+  var b = browserify({
+    entries: [
+      path.join(inputDir, 'app.js'),
+      path.join(inputDir, 'world.js')
+    ]
+  })
+  b.plugin('factor-bundle', {
+    outputs: [
+      path.join(actualDir, 'entry1.js'),
+      path.join(actualDir, 'entry2.js')
+    ]
+  })
+  b.plugin(dynamicImport, { dir: actualDir })
+
+  b.bundle()
+    .pipe(fs.createWriteStream(path.join(actualDir, 'bundle.js')))
+    .on('error', t.fail)
+    .on('finish', onbuilt)
+
+  function onbuilt () {
+    // wait a bit for other bundles to be written
+    setTimeout(function () {
+      var expected = readTree.sync(expectedDir, { encoding: 'utf8' })
+      var actual = readTree.sync(actualDir, { encoding: 'utf8' })
+
+      t.equal(Object.keys(actual).length, 4, 'should output 4 files: common, entry 1, entry 2, dynamic 1')
+      t.deepEqual(actual, expected, 'should have same contents as expected')
+      t.end()
+    }, 100)
+  }
 })

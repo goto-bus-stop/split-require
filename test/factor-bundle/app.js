@@ -1,0 +1,1 @@
+require('./log')('hello app')
