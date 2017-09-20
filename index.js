@@ -238,6 +238,12 @@ module.exports = function dynamicImportPlugin (b, opts) {
   function processDynamicImport (row, node) {
     var importPath = node.arguments[0].arguments[0].value
     var resolved = row.indexDeps[importPath]
+    // If `importPath` was already a resolved dependency index (eg. thanks to bundle-collapser)
+    // we should just use that
+    if (resolved == null) {
+      resolved = importPath
+    }
+
     node.edit.update(importFunction + '(' + JSON.stringify(resolved) + ')')
 
     queueDynamicImport(row.index, resolved, node)
