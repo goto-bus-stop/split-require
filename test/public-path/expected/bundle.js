@@ -4,7 +4,7 @@ _$browserifyDynamicImport(3)
 
 },{"../../helper.js":1}],1:[function(require,module,exports){
 /* eslint-disable no-undef, no-return-assign */
-var mappings = {"3":"http:/localhost:9966/build/chunk.3.js"}
+var mappings = {"3":"http:/localhost:9966/build/bundle.3.js"}
 var cache = Object.create(null)
 
 module.exports = function load (index) {

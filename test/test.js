@@ -3,7 +3,9 @@ var path = require('path')
 var fs = require('fs')
 var browserify = require('browserify')
 var readTree = require('read-file-tree')
+var rimraf = require('rimraf')
 var mkdirp = require('mkdirp')
+var concat = require('concat-stream')
 var dynamicImport = require('../')
 
 function testFixture (t, name, opts, message, next) {
@@ -13,6 +15,7 @@ function testFixture (t, name, opts, message, next) {
   var plugin = opts.plugin || function () {}
 
   opts.dir = actualDir
+  rimraf.sync(actualDir)
   mkdirp.sync(actualDir)
 
   browserify(entry)
@@ -65,15 +68,49 @@ test('public-path', function (t) {
   }, 'chunks can be loaded from a configurable base url', t.end)
 })
 
-test('hash', function (t) {
-  testFixture(t, 'hash', {
-    chunkName: function (entry, pipeline, cb) {
-      var crypto = require('crypto')
-      var hash = crypto.createHash('sha512')
-      pipeline.on('data', function (chunk) { hash.update(chunk) })
-      pipeline.on('end', function () {
-        cb(null, hash.digest('hex').slice(0, 8) + '.js')
+test('output stream', function (t) {
+  t.timeoutAfter(3000)
+
+  var entry = path.join(__dirname, 'output-stream/app.js')
+  var expectedDir = path.join(__dirname, 'output-stream/expected')
+  var actualTree = {}
+  var opts = {
+    output: function (bundleName, entry) {
+      t.equal(typeof bundleName, 'string', 'output() gets the public filename in the first parameter')
+      t.equal(typeof entry, 'object', 'output() gets the entry row in the second parameter')
+      return concat(function (contents) {
+        t.equal('bundle.js' in actualTree, false, 'should have written all dynamic bundles before completing the main bundle')
+        actualTree[bundleName] = contents.toString('utf8')
       })
     }
-  }, 'chunkName can be an asynchronous function', t.end)
+  }
+  browserify(entry)
+    .plugin(dynamicImport, opts)
+    .bundle()
+    .pipe(concat(function (contents) {
+      actualTree['bundle.js'] = contents.toString('utf8')
+    }))
+    .on('error', t.fail)
+    .on('finish', onbuilt)
+
+  function onbuilt () {
+    readTree(expectedDir, { encoding: 'utf8' }, function (err, expectedTree) {
+      t.ifErr(err)
+      t.deepEqual(actualTree, expectedTree, 'should have piped all bundles into output() streams')
+      t.end()
+    })
+  }
+})
+
+test.skip('factor-bundle', function (t) {
+  testFixture(t, 'factor-bundle', {
+    plugin: function (b) {
+      b.plugin('factor-bundle', {
+        outputs: [
+          path.join(__dirname, 'factor-bundle/actual', 'entry1.js'),
+          path.join(__dirname, 'factor-bundle/actual', 'entry2.js')
+        ]
+      })
+    }
+  }, 'works together with factor-bundle', t.end)
 })

@@ -9,7 +9,7 @@ _$browserifyDynamicImport(4).then(function (exports) {
 
 },{"../../helper.js":1}],1:[function(require,module,exports){
 /* eslint-disable no-undef, no-return-assign */
-var mappings = {"2":"chunk.2.js","4":"chunk.4.js","5":"chunk.5.js","6":"chunk.6.js"}
+var mappings = {"2":"bundle.2.js","4":"bundle.4.js","5":"bundle.5.js","6":"bundle.6.js"}
 var cache = Object.create(null)
 
 module.exports = function load (index) {

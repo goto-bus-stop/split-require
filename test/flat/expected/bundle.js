@@ -1,6 +1,6 @@
 require=(function(_$expose,_$require){ _$expose.m = {}; _$expose.r = _$require;
 /* eslint-disable no-undef, no-return-assign */
-var mappings = {"2":"chunk.2.js","4":"chunk.4.js"}
+var mappings = {"2":"bundle.2.js","4":"bundle.4.js"}
 var cache = Object.create(null)
 
 var _$load_1 = function load (index) {

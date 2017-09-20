@@ -3,6 +3,7 @@ var fs = require('fs')
 var transformAst = require('transform-ast')
 var babylon = require('babylon')
 var through = require('through2')
+var eos = require('end-of-stream')
 var splicer = require('labeled-stream-splicer')
 var pack = require('browser-pack')
 var runParallel = require('run-parallel')
@@ -51,8 +52,11 @@ function transform (file, opts) {
 
 module.exports = function dynamicImportPlugin (b, opts) {
   var outputDir = opts.dir || './'
-  var outname = opts.chunkName || function (chunk) {
-    return 'chunk.' + chunk.index + '.js'
+  var outname = opts.filename || function (bundle) {
+    return 'bundle.' + bundle.id + '.js'
+  }
+  var createOutputStream = opts.output || function (bundleName) {
+    return fs.createWriteStream(path.join(outputDir, bundleName))
   }
   var publicPath = opts.public || './'
   var receiverPrefix = opts.prefix || '__browserifyDynamicImport__'
@@ -164,8 +168,8 @@ module.exports = function dynamicImportPlugin (b, opts) {
 
     b.emit('import.pipeline', pipeline)
 
-    var tempname = path.join(outputDir, '.browserify-dynamic-chunk-' + entry.id + '-' + Date.now())
-    var writer = pipeline.pipe(fs.createWriteStream(tempname))
+    var basename = outname(entry)
+    var writer = pipeline.pipe(createOutputStream(basename, entry))
 
     pipeline.write(makeDynamicEntryRow(entry))
     pipeline.write(entry)
@@ -176,24 +180,9 @@ module.exports = function dynamicImportPlugin (b, opts) {
     pipeline.end()
 
     pipeline.on('error', cb)
-
-    runParallel([
-      function (cb) {
-        var basename = outname(entry, pipeline, cb)
-        if (basename) cb(null, basename)
-      },
-      function (cb) {
-        writer.on('error', cb)
-        writer.on('close', function () { cb(null) })
-      }
-    ], function (err, results) {
-      if (err) return cb(err)
-      var name = results[0]
-      var finalname = path.join(outputDir, name)
-      fs.rename(writer.path, finalname, function (err) {
-        if (err) return cb(err)
-        cb(null, { entry: entryId, filename: name })
-      })
+    writer.on('error', cb)
+    eos(writer, function () {
+      cb(null, { entry: entryId, filename: basename })
     })
   }
 

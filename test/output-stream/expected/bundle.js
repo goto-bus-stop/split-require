@@ -8,7 +8,7 @@ _$browserifyDynamicImport(2).then(function () {
 
 },{"../../helper.js":1}],1:[function(require,module,exports){
 /* eslint-disable no-undef, no-return-assign */
-var mappings = {"2":"6b5705cb.js","4":"d7783ef4.js"}
+var mappings = {"2":"bundle.2.js","4":"bundle.4.js"}
 var cache = Object.create(null)
 
 module.exports = function load (index) {

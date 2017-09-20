@@ -18,7 +18,7 @@ Lazy load the parts of your app that are not immediately used, to make the initi
 npm install goto-bus-stop/browserify-dynamic-import
 ```
 
-## Usage
+## CLI Usage
 
 ```bash
 browserify ./entry -p [ browserify-dynamic-import --dir /output/directory ]
@@ -29,7 +29,7 @@ browserify ./entry -p [ browserify-dynamic-import --dir /output/directory ]
 
 #### `--dir`
 
-Set the folder to output dynamic bundles to.
+Set the folder to output dynamic bundles to. Defaults to `./`.
 
 #### `--prefix`
 
@@ -37,6 +37,52 @@ Prefix for the function names that are used to load dynamic bundles.
 Defaults to `__browserifyDynamicImport__`, which is probably safe.
 
 ### `--public`
+
+Public path to load chunks from.
+Defaults to `./`, so chunk #1 is loaded as `./chunk.1.js`.
+
+## API Usage
+
+```js
+var dynamicImport = require('browserify-dynamic-import')
+
+browserify('./entry')
+  .plugin(dynamicImport, {
+    dir: '/output/directory'
+  })
+  .pipe(fs.createWriteStream('/output/directory/bundle.js'))
+```
+
+### Options
+
+#### `dir`
+
+Set the folder to output dynamic bundles to. Defaults to `./`.
+This is only necessary if the `output()` option is not used.
+
+#### `outname(entry)`
+
+Function that generates a name for a dynamic bundle.
+Receives the entry point row as the only parameter. The default is:
+
+```js
+function outname (entry) {
+  return 'bundle.' + entry.index + '.js'
+}
+```
+
+#### `output(bundleName)`
+
+Function that should return a stream. The dynamic bundle will be written to the stream.
+`bundleName` is the generated name for the dynamic bundle.
+At runtime, the main bundle will attempt to use this name to load the bundle, so it should be publically accessible under this name.
+
+#### `prefix`
+
+Prefix for the function names that are used to load dynamic bundles.
+Defaults to `__browserifyDynamicImport__`, which is probably safe.
+
+#### `public`
 
 Public path to load chunks from.
 Defaults to `./`, so chunk #1 is loaded as `./chunk.1.js`.

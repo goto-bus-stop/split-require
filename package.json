@@ -8,6 +8,7 @@
   "dependencies": {
     "babylon": "^6.18.0",
     "browser-pack": "^6.0.2",
+    "end-of-stream": "^1.4.0",
     "labeled-stream-splicer": "^2.0.0",
     "run-parallel": "^1.1.6",
     "transform-ast": "^2.1.0"
@@ -15,9 +16,11 @@
   "devDependencies": {
     "browser-pack-flat": "^2.5.0",
     "browserify": "^14.4.0",
+    "concat-stream": "^1.6.0",
     "factor-bundle": "^2.5.0",
     "mkdirp": "^0.5.1",
     "read-file-tree": "^1.0.0",
+    "rimraf": "^2.6.2",
     "standard": "^10.0.3",
     "tap-diff": "^0.1.1",
     "tape": "^4.8.0"
