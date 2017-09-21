@@ -4,9 +4,12 @@ dynamic `import()` for browserify
 
 Lazy load the parts of your app that are not immediately used, to make the initial load faster.
 
+[![stability][stability-image]][stability-url]
 [![travis][travis-image]][travis-url]
 [![standard][standard-image]][standard-url]
 
+[stability-image]: https://img.shields.io/badge/stability-experimental-orange.svg?style=flat-square
+[stability-url]: https://nodejs.org/api/documentation.html#documentation_stability_index
 [travis-image]: https://img.shields.io/travis/goto-bus-stop/browserify-dynamic-import.svg?style=flat-square
 [travis-url]: https://travis-ci.org/goto-bus-stop/browserify-dynamic-import
 [standard-image]: https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat-square
