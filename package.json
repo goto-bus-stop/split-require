@@ -19,7 +19,7 @@
     "concat-stream": "^1.6.0",
     "factor-bundle": "^2.5.0",
     "mkdirp": "^0.5.1",
-    "read-file-tree": "^1.0.0",
+    "read-file-tree": "^1.1.0",
     "rimraf": "^2.6.2",
     "standard": "^10.0.3",
     "tap-diff": "^0.1.1",

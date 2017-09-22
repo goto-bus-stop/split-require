@@ -27,14 +27,10 @@ function testFixture (t, name, opts, message, next) {
     .on('finish', onbuilt)
 
   function onbuilt () {
-    readTree(expectedDir, { encoding: 'utf8' }, function (err, expected) {
-      if (err) t.fail(err)
-      readTree(actualDir, { encoding: 'utf8' }, function (err, actual) {
-        if (err) t.fail(err)
-        t.deepEqual(actual, expected, message)
-        next()
-      })
-    })
+    var expected = readTree.sync(expectedDir, { encoding: 'utf8' })
+    var actual = readTree.sync(actualDir, { encoding: 'utf8' })
+    t.deepEqual(actual, expected, message)
+    next()
   }
 }
 
