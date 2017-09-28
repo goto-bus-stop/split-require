@@ -1,6 +1,7 @@
 var path = require('path')
 var fs = require('fs')
 var transformAst = require('transform-ast')
+var convert = require('convert-source-map')
 var babylon = require('babylon')
 var through = require('through2')
 var eos = require('end-of-stream')
@@ -19,7 +20,7 @@ var parseOpts = {
   allowReturnOutsideFunction: true
 }
 
-function transform (file) {
+function transform (file, opts) {
   var source = ''
   return through(onwrite, onend)
   function onwrite (chunk, enc, next) {
@@ -46,7 +47,11 @@ function transform (file) {
         node.prepend('var ' + importFunction + ' = require(' + JSON.stringify(relative) + ');\n')
       }
     })
-    next(null, result.toString())
+    var transformed = result.toString()
+    if (opts._flags && opts._flags.debug) {
+      transformed += '\n' + convert.fromObject(result.map).toComment()
+    }
+    next(null, transformed)
   }
 }
 
@@ -152,6 +157,9 @@ module.exports = function dynamicImportPlugin (b, opts) {
     rows.forEach(function (row) {
       if (row.transformable) {
         row.source = row.transformable.toString()
+        if (b._options.debug) {
+          row.source += '\n' + convert.fromObject(row.transformable.map).toComment()
+        }
       }
     })
 
