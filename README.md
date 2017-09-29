@@ -80,6 +80,31 @@ Function that should return a stream. The dynamic bundle will be written to the 
 `bundleName` is the generated name for the dynamic bundle.
 At runtime, the main bundle will attempt to use this name to load the bundle, so it should be publically accessible under this name.
 
+The `bundleName` can be changed by emitting a `name` event on the returned stream (before it completes!).
+This is useful to generate a bundle name based on a hash of the file contents, for example.
+
+```js
+var crypto = require('crypto')
+b.plugin(dynamicImport, {
+  output: function (bundleName) {
+    var stream = fs.createWriteStream('/tmp/' + bundleName)
+    var hash = crypto.createHash('sha1')
+
+    return through(onwrite, onend)
+    function onwrite (chunk, enc, cb) {
+      hash.update(chunk)
+      stream.write(chunk, cb)
+    }
+    function onend (cb) {
+      stream.end()
+      var name = hash.digest('hex').slice(0, 10) + '.js'
+      this.emit('name', name)
+      fs.rename('/tmp/' + bundleName, './' + name, cb)
+    }
+  }
+})
+```
+
 #### `prefix`
 
 Prefix for the function names that are used to load dynamic bundles.

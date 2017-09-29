@@ -198,6 +198,9 @@ module.exports = function dynamicImportPlugin (b, opts) {
 
     var basename = outname(entry)
     var writer = pipeline.pipe(createOutputStream(basename, entry))
+    writer.on('name', function (name) {
+      basename = name
+    })
 
     pipeline.write(makeDynamicEntryRow(entry))
     pipeline.write(entry)
