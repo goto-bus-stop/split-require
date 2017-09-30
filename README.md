@@ -56,6 +56,23 @@ browserify('./entry')
   .pipe(fs.createWriteStream('/output/directory/bundle.js'))
 ```
 
+Through the API, browserify-dynamic-import can also be used together with
+[factor-bundle](https://github.com/browserify/factor-bundle). Listen for the
+`factor.pipeline` event and unshift a dynamic import stream to the `'pack'`
+label:
+
+```js
+b.plugin(dynamicImport, { dir: '/output/directory' })
+b.on('factor.pipeline', function (file, pipeline) {
+  var stream = dynamicImport.createStream(b, {
+    dir: '/output/directory'
+  })
+  pipeline.get('pack').unshift(stream)
+})
+```
+
+Note that you must pass the options to the plugin _and_ the stream.
+
 ### Options
 
 #### `dir`
