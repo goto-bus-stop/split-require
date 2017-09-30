@@ -22,17 +22,16 @@ var parseOpts = {
 module.exports = function dynamicImportPlugin (b, opts) {
   b.transform(transform)
   b.on('reset', addHooks)
-  b.on('factor.pipeline', function (file, pipeline) {
-    pipeline.get('pack').unshift(createStream(b, opts))
-  })
   addHooks()
 
   function addHooks () {
-    b.pipeline.get('pack').unshift(createStream(b, opts))
+    b.pipeline.get('pack').unshift(createSplitter(b, opts))
   }
 }
 
-function createStream (b, opts) {
+module.exports.createStream = createSplitter
+
+function createSplitter (b, opts) {
   var outputDir = opts.dir || './'
   var outname = opts.filename || function (bundle) {
     return 'bundle.' + bundle.id + '.js'

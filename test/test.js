@@ -118,6 +118,10 @@ test('factor-bundle', function (t) {
       path.join(inputDir, 'world.js')
     ]
   })
+  b.on('factor.pipeline', function (file, pipeline) {
+    pipeline.get('pack').unshift(
+      dynamicImport.createStream(b, { dir: actualDir }))
+  })
   b.plugin('factor-bundle', {
     outputs: [
       path.join(actualDir, 'entry1.js'),

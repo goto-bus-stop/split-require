@@ -15,6 +15,12 @@ var parseOpts = {
   allowReturnOutsideFunction: true
 }
 
+/**
+ * Transform that rewrites `import()` to acceptable syntax for
+ * `module-deps`.
+ * Do not use as a standalone transform, only with the plugin!
+ */
+
 module.exports = function transform (file, opts) {
   var source = ''
   return through(onwrite, onend)
