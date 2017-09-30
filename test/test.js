@@ -5,6 +5,7 @@ var browserify = require('browserify')
 var readTree = require('read-file-tree')
 var rimraf = require('rimraf')
 var mkdirp = require('mkdirp')
+var to = require('flush-write-stream')
 var concat = require('concat-stream')
 var dynamicImport = require('../')
 
@@ -145,5 +146,51 @@ test('factor-bundle', function (t) {
       t.deepEqual(actual, expected, 'should have same contents as expected')
       t.end()
     }, 100)
+  }
+})
+
+test.only('naming bundles by emitting `name` event on a stream', function (t) {
+  var crypto = require('crypto')
+  var input = path.join(__dirname, 'name/app.js')
+  var actualDir = path.join(__dirname, 'name/actual')
+  var expectedDir = path.join(__dirname, 'name/expected')
+
+  rimraf.sync(actualDir)
+  mkdirp.sync(actualDir)
+
+  var b = browserify(input)
+  b.plugin(dynamicImport, {
+    output: function (bundleName) {
+      var stream = fs.createWriteStream(path.join(actualDir, bundleName))
+      var hash = crypto.createHash('sha1')
+
+      return to(onwrite, onend)
+      function onwrite (chunk, enc, cb) {
+        hash.update(chunk)
+        stream.write(chunk, cb)
+      }
+      function onend (cb) {
+        var self = this
+        stream.end(function (err) {
+          if (err) return cb(err)
+          var name = hash.digest('hex').slice(0, 10) + '.js'
+          self.emit('name', name)
+          fs.rename(path.join(actualDir, bundleName), path.join(actualDir, name), cb)
+        })
+      }
+    }
+  })
+
+  b.bundle()
+    .pipe(fs.createWriteStream(path.join(actualDir, 'bundle.js')))
+    .on('error', t.fail)
+    .on('finish', onbuilt)
+
+  function onbuilt () {
+    var expected = readTree.sync(expectedDir, { encoding: 'utf8' })
+    var actual = readTree.sync(actualDir, { encoding: 'utf8' })
+
+    t.deepEqual(actual, expected, 'should have same contents as expected')
+    t.end()
   }
 })

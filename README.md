@@ -85,12 +85,13 @@ This is useful to generate a bundle name based on a hash of the file contents, f
 
 ```js
 var crypto = require('crypto')
+var to = require('flush-write-stream')
 b.plugin(dynamicImport, {
   output: function (bundleName) {
     var stream = fs.createWriteStream('/tmp/' + bundleName)
     var hash = crypto.createHash('sha1')
 
-    return through(onwrite, onend)
+    return to(onwrite, onend)
     function onwrite (chunk, enc, cb) {
       hash.update(chunk)
       stream.write(chunk, cb)
