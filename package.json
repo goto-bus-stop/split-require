@@ -1,7 +1,7 @@
 {
   "name": "browserify-dynamic-import",
   "description": " dynamic import() for browserify",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "bugs": {
     "url": "https://github.com/goto-bus-stop/browserify-dynamic-import/issues"
   },
