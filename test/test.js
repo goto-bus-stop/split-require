@@ -149,7 +149,7 @@ test('factor-bundle', function (t) {
   }
 })
 
-test.only('naming bundles by emitting `name` event on a stream', function (t) {
+test('naming bundles by emitting `name` event on a stream', function (t) {
   var crypto = require('crypto')
   var input = path.join(__dirname, 'name/app.js')
   var actualDir = path.join(__dirname, 'name/actual')
