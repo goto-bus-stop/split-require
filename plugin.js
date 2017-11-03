@@ -330,7 +330,7 @@ function createSplitter (b, opts) {
 
     return {
       id: 'entry' + entry.index,
-      source: 'require("split-require").s(' + JSON.stringify(entry.index) + ', require("a"))',
+      source: 'require("split-require").l(' + JSON.stringify(entry.index) + ', require("a"))',
       entry: true,
       deps: {
         'split-require': runtimeRow.id,

@@ -45,14 +45,14 @@ test('chain', function (t) {
 })
 
 test('also-required', function (t) {
-  testFixture(t, 'also-required', {}, 'import() should work on modules that are already included in the same bundle for some other reason', t.end)
+  testFixture(t, 'also-required', {}, 'splitRequire() should work on modules that are already included in the same bundle for some other reason', t.end)
 })
 
 test('flat', function (t) {
   testFixture(t, 'flat', {
     plugin: function (b, opts) {
       b.plugin('browser-pack-flat/plugin')
-      b.on('import.pipeline', function (pipeline) {
+      b.on('split.pipeline', function (pipeline) {
         pipeline.get('pack').splice(0, 1,
           require('browser-pack-flat')({ raw: true }))
       })
@@ -101,8 +101,8 @@ test('output stream', function (t) {
   }
 })
 
-test('without import()', function (t) {
-  testFixture(t, 'no-imports', {}, 'works when import() is not used', t.end)
+test('without splitRequire()', function (t) {
+  testFixture(t, 'no-imports', {}, 'works when splitRequire() is not used', t.end)
 })
 
 test('factor-bundle', function (t) {
