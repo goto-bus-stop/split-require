@@ -7,14 +7,14 @@ var rimraf = require('rimraf')
 var mkdirp = require('mkdirp')
 var to = require('flush-write-stream')
 var concat = require('concat-stream')
-var dynamicImport = require('../')
+var splitRequirePlugin = require('../plugin')
 
 function testFixture (t, name, opts, message, next) {
   var entry = path.join(__dirname, name, 'app.js')
   var expectedDir = path.join(__dirname, name, 'expected')
   var actualDir = path.join(__dirname, name, 'actual')
   var plugin = opts.plugin || function (b, opts) {
-    return b.plugin(dynamicImport, opts)
+    return b.plugin(splitRequirePlugin, opts)
   }
 
   opts.dir = actualDir
@@ -56,7 +56,7 @@ test('flat', function (t) {
         pipeline.get('pack').splice(0, 1,
           require('browser-pack-flat')({ raw: true }))
       })
-      b.plugin(dynamicImport, opts)
+      b.plugin(splitRequirePlugin, opts)
     }
   }, 'works together with browser-pack-flat', t.end)
 })
@@ -84,7 +84,7 @@ test('output stream', function (t) {
     }
   }
   browserify(entry)
-    .plugin(dynamicImport, opts)
+    .plugin(splitRequirePlugin, opts)
     .bundle()
     .pipe(concat(function (contents) {
       actualTree['bundle.js'] = contents.toString('utf8')
@@ -121,7 +121,7 @@ test('factor-bundle', function (t) {
   })
   b.on('factor.pipeline', function (file, pipeline) {
     pipeline.get('pack').unshift(
-      dynamicImport.createStream(b, { dir: actualDir }))
+      splitRequirePlugin.createStream(b, { dir: actualDir }))
   })
   b.plugin('factor-bundle', {
     outputs: [
@@ -129,7 +129,7 @@ test('factor-bundle', function (t) {
       path.join(actualDir, 'entry2.js')
     ]
   })
-  b.plugin(dynamicImport, { dir: actualDir })
+  b.plugin(splitRequirePlugin, { dir: actualDir })
 
   b.bundle()
     .pipe(fs.createWriteStream(path.join(actualDir, 'bundle.js')))
@@ -159,7 +159,7 @@ test('naming bundles by emitting `name` event on a stream', function (t) {
   mkdirp.sync(actualDir)
 
   var b = browserify(input)
-  b.plugin(dynamicImport, {
+  b.plugin(splitRequirePlugin, {
     output: function (bundleName) {
       var stream = fs.createWriteStream(path.join(actualDir, bundleName))
       var hash = crypto.createHash('sha1')

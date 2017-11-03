@@ -1,1 +1,1 @@
-import('./imported')
+require('split-require')('./imported', function () { })

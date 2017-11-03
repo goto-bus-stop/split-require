@@ -8,9 +8,11 @@
   "dependencies": {
     "babylon": "^6.18.0",
     "browser-pack": "^6.0.2",
+    "caller-path": "^2.0.0",
     "convert-source-map": "^1.5.0",
     "end-of-stream": "^1.4.0",
     "labeled-stream-splicer": "^2.0.0",
+    "resolve": "^1.5.0",
     "run-parallel": "^1.1.6",
     "transform-ast": "^2.2.1"
   },
@@ -30,6 +32,7 @@
   "homepage": "https://github.com/goto-bus-stop/browserify-dynamic-import#readme",
   "keywords": [],
   "license": "MIT",
+  "browser": "browser.js",
   "main": "index.js",
   "repository": {
     "type": "git",
