@@ -3,6 +3,10 @@ var callerPath = require('caller-path')
 var resolve = require('resolve')
 
 module.exports = function load (filename, cb) {
+  if (typeof filename === 'object' && filename._options) {
+    return require('./plugin')(filename, cb)
+  }
+
   if (!cb) cb = function () {}
 
   var basedir = path.dirname(callerPath())

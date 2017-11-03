@@ -39,7 +39,7 @@ function load (index, cb) {
   document.body.appendChild(s)
 }
 
-// Called when a dynamic bundle has loaded.
+// Called by dynamic bundles once they have loaded.
 function loadedBundle (index, result) {
   index = '~' + index
   if (receivers[index]) {
@@ -49,6 +49,7 @@ function loadedBundle (index, result) {
   }
 }
 
+// Register dynamic bundle URLs.
 function registerBundles (obj) {
   for (var i in obj) {
     if (obj.hasOwnProperty(i)) {

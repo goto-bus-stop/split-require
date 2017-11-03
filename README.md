@@ -1,10 +1,17 @@
-# browserify-dynamic-import
+# split-require
 
-dynamic `import()` for browserify
+Bundle splitting for CommonJS and ES modules (dynamic `import()`) in browserify
 
 Lazy load the parts of your app that are not immediately used, to make the initial load faster.
 
-[What?](#what) - [Install](#install) - [CLI](#cli-usage) - [API](#api-usage) - [License: MIT](#license)
+This module works without a compile step on the server, and in the browser with the browserify plugin.
+
+[What?](#what) -
+[Install](#install) -
+[Usage](#usage) -
+[Plugin CLI](#browserify-plugin-cli-usage) -
+[Plugin API](#browserify-plugin-api-usage) -
+[License: MIT](#license)
 
 [![stability][stability-image]][stability-url]
 [![travis][travis-image]][travis-url]
@@ -19,11 +26,12 @@ Lazy load the parts of your app that are not immediately used, to make the initi
 
 ## What?
 
-This plugin takes source files with `import()` calls like:
+This plugin takes source files with `splitRequire()` calls like:
 
 ```js
 var html = require('choo/html')
 var app = require('choo')()
+var splitRequire = require('split-require')
 
 app.route('/', mainView)
 app.mount('body')
@@ -37,16 +45,30 @@ function mainView () {
   </body>`
 }
 
-import('./SomeComponent').then(function (SomeComponent) {
+splitRequire('./SomeComponent', function (err, SomeComponent) {
   component = new SomeComponent()
   app.emitter.emit('render')
 })
 ```
 
-And splits off `import()`ed files into their own bundles, that will be dynamically loaded at runtime.
+And splits off `splitRequire()`d files into their own bundles, that will be dynamically loaded at runtime.
 In this case, a main bundle would be created including `choo`, `choo/html` and the above file, and a second bundle would be created for the `SomeComponent.js` file and its dependencies.
 
-> Note that this isn't 100% spec compliant.
+### `import()`
+
+`split-require` also comes with a transform for ES modules `import()` syntax:
+
+```bash
+browserify app.js -t split-require/import -p split-require
+```
+```js
+import('./SomeComponent').then(function (SomeComponent) {
+  // Works!
+  console.log(SomeComponent)
+})
+```
+
+> ! Note that this transform is not 100% spec compliant.
 > `import()` is an ES modules feature, not a CommonJS one.
 > In CommonJS with this plugin, the exports object is the value of the `module.exports` of the imported module, so it may well be a function or some other non-object value.
 > In ES modules, the exports object in `.then()` will always be an object, with a `.default` property for default exports and other properties for named exports.
@@ -55,13 +77,27 @@ In this case, a main bundle would be created including `choo`, `choo/html` and t
 ## Install
 
 ```
-npm install goto-bus-stop/browserify-dynamic-import
+npm install split-require
 ```
 
-## CLI Usage
+## Usage
+
+Use the `split-require` function for modules that should be split off into a separate bundle.
+
+```js
+var splitRequire = require('split-require')
+
+require('./something') // loaded immediately
+splitRequire('./other', function () {}) // loaded async
+```
+
+This works out of the box in Node.js.
+Add the browserify plugin as described below in order to make it work in the browser, too.
+
+## Browserify Plugin CLI Usage
 
 ```bash
-browserify ./entry -p [ browserify-dynamic-import --dir /output/directory ]
+browserify ./entry -p [ split-require --dir /output/directory ]
   > /output/directory/bundle.js
 ```
 
@@ -71,23 +107,18 @@ browserify ./entry -p [ browserify-dynamic-import --dir /output/directory ]
 
 Set the folder to output dynamic bundles to. Defaults to `./`.
 
-#### `--prefix`
-
-Prefix for the function names that are used to load dynamic bundles.
-Defaults to `__browserifyDynamicImport__`, which is probably safe.
-
 ### `--public`
 
-Public path to load chunks from.
-Defaults to `./`, so chunk #1 is loaded as `./chunk.1.js`.
+Public path to load dynamic bundles from.
+Defaults to `./`, so dynamic bundle #1 is loaded as `./bundle.1.js`.
 
-## API Usage
+## Browserify Plugin API Usage
 
 ```js
-var dynamicImport = require('browserify-dynamic-import')
+var splitRequire = require('split-require')
 
 browserify('./entry')
-  .plugin(dynamicImport, {
+  .plugin(splitRequire, {
     dir: '/output/directory'
   })
   .pipe(fs.createWriteStream('/output/directory/bundle.js'))
@@ -99,9 +130,9 @@ Through the API, browserify-dynamic-import can also be used together with
 label:
 
 ```js
-b.plugin(dynamicImport, { dir: '/output/directory' })
+b.plugin(splitRequire, { dir: '/output/directory' })
 b.on('factor.pipeline', function (file, pipeline) {
-  var stream = dynamicImport.createStream(b, {
+  var stream = splitRequire.createStream(b, {
     dir: '/output/directory'
   })
   pipeline.get('pack').unshift(stream)
@@ -134,18 +165,19 @@ Function that should return a stream. The dynamic bundle will be written to the 
 `bundleName` is the generated name for the dynamic bundle.
 At runtime, the main bundle will attempt to use this name to load the bundle, so it should be publically accessible under this name.
 
-The `bundleName` can be changed by emitting a `name` event on the returned stream (before it completes!).
+The `bundleName` can be changed by emitting a `name` event on the returned stream **before the stream finishes**.
 This is useful to generate a bundle name based on a hash of the file contents, for example.
 
 ```js
+var fs = require('fs')
 var crypto = require('crypto')
 var to = require('flush-write-stream')
-b.plugin(dynamicImport, {
+b.plugin(splitRequire, {
   output: function (bundleName) {
     var stream = fs.createWriteStream('/tmp/' + bundleName)
     var hash = crypto.createHash('sha1')
-
     return to(onwrite, onend)
+
     function onwrite (chunk, enc, cb) {
       hash.update(chunk)
       stream.write(chunk, cb)
@@ -160,21 +192,16 @@ b.plugin(dynamicImport, {
 })
 ```
 
-#### `prefix`
-
-Prefix for the function names that are used to load dynamic bundles.
-Defaults to `__browserifyDynamicImport__`, which is probably safe.
-
 #### `public`
 
-Public path to load chunks from.
-Defaults to `./`, so chunk #1 is loaded as `./chunk.1.js`.
+Public path to load dynamic bundles from.
+Defaults to `./`, so dynamic bundle #1 is loaded as `./bundle.1.js`.
 
 ### Events
 
-#### `b.on('import.pipeline', function (pipeline) {})`
+#### `b.on('split.pipeline', function (pipeline) {})`
 
-`browserify-dynamic-import` emits an event on the browserify instance for each [pipeline] it creates.
+`split-require` emits an event on the browserify instance for each [pipeline] it creates.
 
 `pipeline` is a [labeled-stream-splicer](https://github.com/browserify/labeled-stream-splicer) with labels:
 

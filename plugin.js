@@ -1,4 +1,3 @@
-var EventEmitter = require('events')
 var path = require('path')
 var fs = require('fs')
 var transformAst = require('transform-ast')
@@ -82,16 +81,13 @@ function transformSplitRequireCalls (file, opts) {
   }
 }
 
-module.exports = function dynamicImportPlugin (b, opts) {
-  var bus = new EventEmitter()
-
+module.exports = function splitRequirePlugin (b, opts) {
   b.transform(transformSplitRequireCalls)
   b.on('reset', addHooks)
 
   addHooks()
 
   function addHooks () {
-    bus.removeAllListeners()
     b.pipeline.get('pack').unshift(createSplitter(b, opts))
   }
 }
@@ -145,10 +141,10 @@ function createSplitter (b, opts) {
       return
     }
 
-    // Ensure the main bundle exports the dynamic import helper etc.
+    // Ensure the main bundle exports the helper etc.
     b._bpack.hasExports = true
 
-    // Remove dynamic imports from row dependencies.
+    // Remove split modules from row dependencies.
     splitRequires.forEach(function (imp) {
       var row = getRow(imp.row)
       var dep = getRow(imp.dep)
@@ -235,7 +231,7 @@ function createSplitter (b, opts) {
       'wrap', []
     ])
 
-    b.emit('import.pipeline', pipeline)
+    b.emit('split.pipeline', pipeline)
 
     var basename = outname(entry)
     var writer = pipeline.pipe(createOutputStream(basename, entry))
@@ -293,12 +289,12 @@ function createSplitter (b, opts) {
   function processSplitRequire (row, node) {
     // We need to get the `.arguments[0]` twice because at this point the call looks like
     // `splitRequire(require('xyz'))`
-    var importPath = node.arguments[0].arguments[0].value
-    var resolved = row.indexDeps[importPath]
-    // If `importPath` was already a resolved dependency index (eg. thanks to bundle-collapser)
+    var requirePath = node.arguments[0].arguments[0].value
+    var resolved = row.indexDeps[requirePath]
+    // If `requirePath` was already a resolved dependency index (eg. thanks to bundle-collapser)
     // we should just use that
     if (resolved == null) {
-      resolved = importPath
+      resolved = requirePath
     }
 
     node.arguments[0].edit.update(JSON.stringify(resolved))
