@@ -315,7 +315,7 @@ function createSplitter (b, opts) {
 
     return {
       id: 'split_require_mappings',
-      source: 'require("split-require").r(' + JSON.stringify(mappings) + ')',
+      source: 'require("split-require").b = ' + JSON.stringify(mappings) + ';',
       entry: true,
       deps: { 'split-require': runtimeRow.id },
       indexDeps: { 'split-require': runtimeRow.index }
@@ -331,7 +331,7 @@ function createSplitter (b, opts) {
 
     return {
       id: 'entry' + entry.index,
-      source: 'require("split-require").l(' + JSON.stringify(entry.index) + ', require("a"))',
+      source: 'require("split-require").l(' + JSON.stringify(entry.index) + ', require("a"));',
       entry: true,
       deps: {
         'split-require': runtimeRow.id,
