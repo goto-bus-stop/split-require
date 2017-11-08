@@ -1,5 +1,9 @@
+// Map dynamic bundle entry point IDs to URLs.
 var bundles = {}
+// Store dynamic bundle exports.
 var cache = {}
+// Store dynamic bundle loading callbacks, in case the same module is imported
+// multiple times simultaneously.
 var receivers = {}
 
 function load (index, cb) {
@@ -58,8 +62,18 @@ function registerBundles (obj) {
   }
 }
 
+// "Load" a module that we know is included in this bundle.
+function loadLocal (requirer, onload) {
+  try {
+    onload(null, requirer())
+  } catch (err) {
+    onload(err)
+  }
+}
+
 // Used by the bundle.
 load.r = registerBundles
 load.l = loadedBundle
+load.t = loadLocal
 
 module.exports = load

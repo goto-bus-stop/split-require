@@ -168,7 +168,8 @@ function createSplitter (b, opts) {
       if (mainRows.includes(depEntry.index)) {
         // this entry point is also non-dynamically required by the main bundle.
         // we should not move it into a dynamic bundle.
-        node.callee.edit.update('(function(x,cb){try{cb(null,require(' + JSON.stringify(depEntry.id) + '))}catch(err){cb(err)}})')
+        node.callee.edit.append('.t')
+        node.arguments[0].edit.prepend('function(){return require(').append(')}')
         row.deps[depEntry.id] = depEntry.id
         row.indexDeps[depEntry.id] = depEntry.index
         return
