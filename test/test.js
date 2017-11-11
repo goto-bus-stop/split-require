@@ -9,6 +9,16 @@ var to = require('flush-write-stream')
 var concat = require('concat-stream')
 var splitRequirePlugin = require('../plugin')
 
+function splitRequirePath (b) {
+  var resolve = b._bresolve
+  b._bresolve = function (id, opts, cb) {
+    if (id === 'split-require') {
+      id = require.resolve('../')
+    }
+    return resolve(id, opts, cb)
+  }
+}
+
 function testFixture (t, name, opts, message, next) {
   var entry = path.join(__dirname, name, 'app.js')
   var expectedDir = path.join(__dirname, name, 'expected')
@@ -22,6 +32,7 @@ function testFixture (t, name, opts, message, next) {
   mkdirp.sync(actualDir)
 
   browserify(entry)
+    .plugin(splitRequirePath)
     .plugin(plugin, opts)
     .bundle()
     .pipe(fs.createWriteStream(path.join(actualDir, 'bundle.js')))
@@ -84,6 +95,7 @@ test('output stream', function (t) {
     }
   }
   browserify(entry)
+    .plugin(splitRequirePath)
     .plugin(splitRequirePlugin, opts)
     .bundle()
     .pipe(concat(function (contents) {
@@ -129,6 +141,7 @@ test('factor-bundle', function (t) {
       path.join(actualDir, 'entry2.js')
     ]
   })
+  b.plugin(splitRequirePath)
   b.plugin(splitRequirePlugin, { dir: actualDir })
 
   b.bundle()
@@ -159,6 +172,7 @@ test('naming bundles by emitting `name` event on a stream', function (t) {
   mkdirp.sync(actualDir)
 
   var b = browserify(input)
+  b.plugin(splitRequirePath)
   b.plugin(splitRequirePlugin, {
     output: function (bundleName) {
       var stream = fs.createWriteStream(path.join(actualDir, bundleName))
