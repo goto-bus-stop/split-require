@@ -14,6 +14,8 @@ var parseOpts = {
 }
 
 var runtimePath = require.resolve('./browser')
+// Used to tag nodes that are splitRequire() calls.
+var kIsSplitRequireCall = Symbol('is split-require call')
 
 function mayContainSplitRequire (str) {
   return str.includes('split-require')
@@ -35,7 +37,15 @@ function createSplitRequireDetector () {
       if (node.parent.type === 'AssignmentExpression') {
         splitVariables.push(node.parent.left.name)
       }
+      // require('split-require')(...args)
+      if (node.parent.type === 'CallExpression') {
+        node.parent[kIsSplitRequireCall] = true
+      }
       return true
+    }
+    // var sr = require('split-require'); sr(...args)
+    if (node.type === 'CallExpression' && node.callee.type === 'Identifier' && check(node.callee.name)) {
+      node[kIsSplitRequireCall] = true
     }
     return false
   }
@@ -64,14 +74,9 @@ function transformSplitRequireCalls (file, opts) {
 
     var splitVariables = createSplitRequireDetector()
     var result = transformAst(source, parseOpts, function (node) {
-      var isSplitRequire = splitVariables.visit(node)
+      splitVariables.visit(node)
 
-      // require('split-require')(...args)
-      var isModuleCall = isSplitRequire && node.parent.type === 'CallExpression' && node.parent.callee === node
-      // var sr = require('split-require'); sr(...args)
-      var isVarCall = node.type === 'CallExpression' && node.callee.type === 'Identifier' && splitVariables.check(node.callee.name)
-
-      if (isModuleCall || isVarCall) {
+      if (node[kIsSplitRequireCall]) {
         var arg = node.arguments[0]
         arg.edit.prepend('require(').append(')')
       }
@@ -116,7 +121,7 @@ function createSplitter (b, opts) {
       var result = transformAst(row.source, parseOpts, function (node) {
         splitVariables.visit(node)
 
-        if (node.type === 'CallExpression' && node.callee.type === 'Identifier' && splitVariables.check(node.callee.name)) {
+        if (node[kIsSplitRequireCall]) {
           processSplitRequire(row, node)
         }
       })
