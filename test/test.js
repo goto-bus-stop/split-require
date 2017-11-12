@@ -52,7 +52,7 @@ test('basic', function (t) {
 })
 
 test('chain', function (t) {
-  testFixture(t, 'chain', {}, 'shoud work with dynamic imports in dynamically imported modules', t.end)
+  testFixture(t, 'chain', {}, 'should work with dynamic imports in dynamically imported modules', t.end)
 })
 
 test('also-required', function (t) {
