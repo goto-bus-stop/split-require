@@ -83,7 +83,7 @@ function transformSplitRequireCalls (file, opts) {
       }
     })
 
-    cb(null, result + '')
+    cb(null, result + '') // no source maps because the change is prettae minimal.
   }
 }
 
@@ -180,7 +180,11 @@ function createSplitter (b, opts) {
         // this entry point is also non-dynamically required by the main bundle.
         // we should not move it into a dynamic bundle.
         node.callee.edit.append('.t')
+        // wrap this in a closure so we call `require()` asynchronously,
+        // just like if it was actually dynamically loaded
         node.arguments[0].edit.prepend('function(){return require(').append(')}')
+
+        // add the dependency back
         row.deps[depEntry.id] = depEntry.id
         row.indexDeps[depEntry.id] = depEntry.index
         return
@@ -206,6 +210,8 @@ function createSplitter (b, opts) {
         if (b._options.debug) {
           row.source += '\n' + convert.fromObject(row.transformable.map).toComment()
         }
+        // leave no trace!
+        delete row.transformable
       }
     })
 
@@ -244,6 +250,9 @@ function createSplitter (b, opts) {
 
     var basename = outname(entry)
     var writer = pipeline.pipe(createOutputStream(basename, entry))
+    // allow the output stream to assign a name asynchronously,
+    // eg. one based on the hash of the bundle contents
+    // the output stream is responsible for saving the file in the correct location
     writer.on('name', function (name) {
       basename = name
     })
