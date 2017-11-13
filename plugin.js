@@ -113,6 +113,7 @@ function createSplitter (b, opts) {
   var rows = []
   var rowsById = Object.create(null)
   var splitRequires = []
+  var runtimeRow = null
 
   return through.obj(onwrite, onend)
 
@@ -128,6 +129,10 @@ function createSplitter (b, opts) {
       })
 
       row.transformable = result
+    }
+
+    if (row.file === runtimePath) {
+      runtimeRow = row
     }
 
     rows.push(row)
@@ -218,9 +223,6 @@ function createSplitter (b, opts) {
       self.push(makeMappingsRow(mappings))
 
       // Expose the `split-require` function so dynamic bundles can access it.
-      var runtimeRow = rows.find(function (row) {
-        return row.file === runtimePath
-      })
       runtimeRow.expose = true
 
       new Set(mainRows).forEach(function (id) {
@@ -315,10 +317,6 @@ function createSplitter (b, opts) {
 
   // Create a module that registers the entry id → bundle filename mappings.
   function makeMappingsRow (mappings) {
-    var runtimeRow = rows.find(function (row) {
-      return row.file === runtimePath
-    })
-
     return {
       id: 'split_require_mappings',
       source: 'require("split-require").b = ' + JSON.stringify(mappings) + ';',
@@ -331,10 +329,6 @@ function createSplitter (b, opts) {
   // Create a proxy module that will call the dynamic bundle receiver function
   // with the dynamic entry point's exports.
   function makeDynamicEntryRow (entry) {
-    var runtimeRow = rows.find(function (row) {
-      return row.file === runtimePath
-    })
-
     return {
       id: 'entry' + entry.index,
       source: 'require("split-require").l(' + JSON.stringify(entry.index) + ', require("a"));',
