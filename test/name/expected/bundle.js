@@ -74,4 +74,4 @@ load.t = loadLocal
 
 module.exports = load
 
-},{}]},{},[2]);
+},{}]},{},["split_require_mappings",2]);

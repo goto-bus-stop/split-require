@@ -232,7 +232,10 @@ function createSplitter (b, opts) {
       runtimeRow.expose = true
 
       new Set(mainRows).forEach(function (id) {
-        self.push(getRow(id))
+        var row = getRow(id)
+        // Move each other entry row by one, so our mappings are registered first.
+        if (row.entry && typeof row.order === 'number') row.order++
+        self.push(row)
       })
 
       cb(null)
@@ -330,6 +333,7 @@ function createSplitter (b, opts) {
       id: 'split_require_mappings',
       source: 'require("split-require").b = ' + JSON.stringify(mappings) + ';',
       entry: true,
+      order: 0,
       deps: { 'split-require': runtimeRow.id },
       indexDeps: { 'split-require': runtimeRow.index }
     }

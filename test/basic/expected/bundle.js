@@ -81,4 +81,4 @@ module.exports = function xyz (num) {
   return num + 33
 }
 
-},{}]},{},[2]);
+},{}]},{},["split_require_mappings",2]);

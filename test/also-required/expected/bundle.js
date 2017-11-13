@@ -90,4 +90,4 @@ module.exports = function whatever () {
   return 'beep boop'
 }
 
-},{}]},{},[2]);
+},{}]},{},["split_require_mappings",2]);
