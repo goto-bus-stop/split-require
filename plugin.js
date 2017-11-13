@@ -7,6 +7,7 @@ var eos = require('end-of-stream')
 var splicer = require('labeled-stream-splicer')
 var pack = require('browser-pack')
 var runParallel = require('run-parallel')
+var deleteValue = require('object-delete-value')
 
 var parseOpts = {
   ecmaVersion: 9,
@@ -346,14 +347,6 @@ function createSplitter (b, opts) {
         'split-require': runtimeRow.index,
         a: entry.index
       }
-    }
-  }
-}
-
-function deleteValue (obj, val) {
-  for (var i in obj) {
-    if (obj.hasOwnProperty(i)) {
-      if (obj[i] === val) delete obj[i]
     }
   }
 }
