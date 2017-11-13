@@ -1,9 +1,9 @@
 {
-  "name": "browserify-dynamic-import",
-  "description": " dynamic import() for browserify",
+  "name": "split-require",
+  "description": "Bundle splitting for CommonJS and ES modules (dynamic `import()`) in browserify",
   "version": "1.0.0",
   "bugs": {
-    "url": "https://github.com/goto-bus-stop/browserify-dynamic-import/issues"
+    "url": "https://github.com/goto-bus-stop/split-require/issues"
   },
   "dependencies": {
     "babylon": "^6.18.0",
@@ -30,14 +30,14 @@
     "tap-diff": "^0.1.1",
     "tape": "^4.8.0"
   },
-  "homepage": "https://github.com/goto-bus-stop/browserify-dynamic-import#readme",
+  "homepage": "https://github.com/goto-bus-stop/split-require#readme",
   "keywords": [],
   "license": "MIT",
   "browser": "browser.js",
   "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/goto-bus-stop/browserify-dynamic-import.git"
+    "url": "git+https://github.com/goto-bus-stop/split-require.git"
   },
   "scripts": {
     "test": "standard && tape test/test.js | tap-diff"
