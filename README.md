@@ -2,9 +2,11 @@
 
 Bundle splitting for CommonJS and ES modules (dynamic `import()`) in browserify
 
-Lazy load the parts of your app that are not immediately used, to make the initial load faster.
+Lazy load the parts of your app that are not immediately used, to make the
+initial load faster.
 
-This module works without a compile step on the server, and in the browser with the browserify plugin.
+This module works without a compile step on the server, and in the browser with
+the browserify plugin.
 
 [What?](#what) -
 [Install](#install) -
@@ -19,8 +21,8 @@ This module works without a compile step on the server, and in the browser with 
 
 [stability-image]: https://img.shields.io/badge/stability-experimental-orange.svg?style=flat-square
 [stability-url]: https://nodejs.org/api/documentation.html#documentation_stability_index
-[travis-image]: https://img.shields.io/travis/goto-bus-stop/browserify-dynamic-import.svg?style=flat-square
-[travis-url]: https://travis-ci.org/goto-bus-stop/browserify-dynamic-import
+[travis-image]: https://img.shields.io/travis/goto-bus-stop/split-require.svg?style=flat-square
+[travis-url]: https://travis-ci.org/goto-bus-stop/split-require
 [standard-image]: https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat-square
 [standard-url]: http://npm.im/standard
 
@@ -51,28 +53,11 @@ splitRequire('./SomeComponent', function (err, SomeComponent) {
 })
 ```
 
-And splits off `splitRequire()`d files into their own bundles, that will be dynamically loaded at runtime.
-In this case, a main bundle would be created including `choo`, `choo/html` and the above file, and a second bundle would be created for the `SomeComponent.js` file and its dependencies.
-
-### `import()`
-
-`split-require` also comes with a transform for ES modules `import()` syntax:
-
-```bash
-browserify app.js -t split-require/import -p split-require
-```
-```js
-import('./SomeComponent').then(function (SomeComponent) {
-  // Works!
-  console.log(SomeComponent)
-})
-```
-
-> ! Note that this transform is not 100% spec compliant.
-> `import()` is an ES modules feature, not a CommonJS one.
-> In CommonJS with this plugin, the exports object is the value of the `module.exports` of the imported module, so it may well be a function or some other non-object value.
-> In ES modules, the exports object in `.then()` will always be an object, with a `.default` property for default exports and other properties for named exports.
-> You'd never get a function back in `.then()` in native ES modules.
+And splits off `splitRequire()`d files into their own bundles, that will be
+dynamically loaded at runtime.
+In this case, a main bundle would be created including `choo`, `choo/html` and
+the above file, and a second bundle would be created for the `SomeComponent.js`
+file and its dependencies.
 
 ## Install
 
@@ -93,6 +78,33 @@ splitRequire('./other', function () {}) // loaded async
 
 This works out of the box in Node.js.
 Add the browserify plugin as described below in order to make it work in the browser, too.
+
+### `import()`
+
+`split-require` also comes with a transform for ES modules `import()` syntax:
+You can use `split-require` with ES modules `import()` syntax using the
+[Babel plugin](https://github.com/goto-bus-stop/babel-plugin-dynamic-import-split-require).
+
+```bash
+browserify app.js \
+  -t [ babelify --plugins dynamic-import-split-require ] \
+  -p split-require
+```
+```js
+import('./SomeComponent').then(function (SomeComponent) {
+  // Works!
+  console.log(SomeComponent)
+})
+```
+
+> ! Note that this transform is not 100% spec compliant.
+> `import()` is an ES modules feature, not a CommonJS one.
+> In CommonJS with this plugin, the exports object is the value of the
+> `module.exports` of the imported module, so it may well be a function or some
+> other non-object value. In ES modules, the exports object in `.then()` will
+> always be an object, with a `.default` property for default exports and other
+> properties for named exports. You'd never get a function back in `.then()` in
+> native ES modules.
 
 ## Browserify Plugin CLI Usage
 
@@ -124,13 +136,17 @@ browserify('./entry')
   .pipe(fs.createWriteStream('/output/directory/bundle.js'))
 ```
 
-Through the API, browserify-dynamic-import can also be used together with
+### With factor-bundle
+
+Through the API, split-require can also be used together with
 [factor-bundle](https://github.com/browserify/factor-bundle). Listen for the
-`factor.pipeline` event and unshift a dynamic import stream to the `'pack'`
-label:
+`factor.pipeline` event, and unshift the result of the `createStream` function
+to the `'pack'` label:
 
 ```js
 b.plugin(splitRequire, { dir: '/output/directory' })
+b.plugin(factorBundle, { /* opts */ })
+
 b.on('factor.pipeline', function (file, pipeline) {
   var stream = splitRequire.createStream(b, {
     dir: '/output/directory'
@@ -140,6 +156,7 @@ b.on('factor.pipeline', function (file, pipeline) {
 ```
 
 Note that you must pass the options to the plugin _and_ the stream.
+Other plugins that generate multiple outputs may need a similar treatment.
 
 ### Options
 
@@ -161,12 +178,14 @@ function outname (entry) {
 
 #### `output(bundleName)`
 
-Function that should return a stream. The dynamic bundle will be written to the stream.
-`bundleName` is the generated name for the dynamic bundle.
-At runtime, the main bundle will attempt to use this name to load the bundle, so it should be publically accessible under this name.
+Function that should return a stream. The dynamic bundle will be written to the
+stream. `bundleName` is the generated name for the dynamic bundle.
+At runtime, the main bundle will attempt to use this name to load the bundle,
+so it should be publically accessible under this name.
 
-The `bundleName` can be changed by emitting a `name` event on the returned stream **before the stream finishes**.
-This is useful to generate a bundle name based on a hash of the file contents, for example.
+The `bundleName` can be changed by emitting a `name` event on the returned
+stream **before the stream finishes**. This is useful to generate a bundle name
+based on a hash of the file contents, for example.
 
 ```js
 var fs = require('fs')
@@ -201,7 +220,8 @@ Defaults to `./`, so dynamic bundle #1 is loaded as `./bundle.1.js`.
 
 #### `b.on('split.pipeline', function (pipeline) {})`
 
-`split-require` emits an event on the browserify instance for each [pipeline] it creates.
+`split-require` emits an event on the browserify instance for each pipeline it
+creates.
 
 `pipeline` is a [labeled-stream-splicer](https://github.com/browserify/labeled-stream-splicer) with labels:
 
