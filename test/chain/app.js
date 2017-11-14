@@ -1,6 +1,8 @@
-import('./a').then(function (exports) {
+var splitRequire = require('split-require')
+
+splitRequire('./a', function (err, exports) {
   console.log('a', exports)
 })
-import('./b').then(function (exports) {
+splitRequire('./b', function (err, exports) {
   console.log('b', exports)
 })

@@ -1,6 +1,7 @@
 var dep = require('./dep')
+var splitRequire = require('split-require')
 
 // import a module that should already be included in the main bundle via ./dep
-import('./whatever').then(function () {
+splitRequire('./whatever', function () {
   console.log('loaded whatever')
 })

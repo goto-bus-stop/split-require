@@ -1,20 +1,3 @@
-require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({"split_require_mappings":[function(require,module,exports){
-require("split-require").b = {"2":"bundle.2.js","4":"bundle.4.js"};
-},{"split-require":1}],3:[function(require,module,exports){
-var splitRequire = require('split-require')
-
-splitRequire(2, onabc)
-
-function onabc (err) {
-  if (err) return ondone(err)
-  splitRequire(4, ondone)
-}
-
-function ondone () {
-  console.log('done')
-}
-
-},{"split-require":1}],1:[function(require,module,exports){
 // Store dynamic bundle exports.
 var cache = {}
 // Store dynamic bundle loading callbacks, in case the same module is imported
@@ -81,5 +64,3 @@ load.l = loadedBundle
 load.t = loadLocal
 
 module.exports = load
-
-},{}]},{},["split_require_mappings",3]);

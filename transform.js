@@ -1,14 +1,8 @@
-var path = require('path')
 var through = require('through2')
 var transformAst = require('transform-ast')
 var babylon = require('babylon')
 var convert = require('convert-source-map')
 
-// import function name used internally only, to rewrite `import()` calls
-// so module-deps doesn't error out on them.
-var importFunction = '_$browserifyDynamicImport'
-
-var helperPath = require.resolve('./helper')
 var parseOpts = {
   parser: babylon,
   ecmaVersion: 9,
@@ -16,8 +10,7 @@ var parseOpts = {
 }
 
 /**
- * Transform that rewrites `import()` to acceptable syntax for
- * `module-deps`.
+ * Transform that rewrites `import()` to `split-require` calls.
  * Do not use as a standalone transform, only with the plugin!
  */
 
@@ -34,6 +27,12 @@ module.exports = function transform (file, opts) {
       plugins: ['dynamicImport']
     })
     var hasImport = false
+    var importFunction = 'splitRequire'
+    var suffix = 0
+    while (source.includes(importFunction)) {
+      importFunction = 'splitRequire' + (suffix++)
+    }
+
     var result = transformAst(source, moduleOpts, function (node) {
       if (node.type === 'Import') {
         // rewrite to require() call to make module-deps pick up on this
@@ -44,10 +43,10 @@ module.exports = function transform (file, opts) {
         hasImport = true
       }
       if (node.type === 'Program' && hasImport) {
-        var relative = path.relative(path.dirname(file), helperPath)
-        node.prepend('var ' + importFunction + ' = require(' + JSON.stringify(relative) + ');\n')
+        node.prepend('var ' + importFunction + ' = require("split-require");\n')
       }
     })
+
     var transformed = result.toString()
     if (opts._flags && opts._flags.debug) {
       transformed += '\n' + convert.fromObject(result.map).toComment()
