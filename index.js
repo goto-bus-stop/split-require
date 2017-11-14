@@ -20,3 +20,11 @@ module.exports = function load (filename, cb) {
     }
   })
 }
+
+Object.defineProperty(module.exports, 'createStream', {
+  configurable: true,
+  enumerable: true,
+  get: function () {
+    return require('./plugin').createStream
+  }
+})
