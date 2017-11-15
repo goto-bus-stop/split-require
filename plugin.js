@@ -8,6 +8,7 @@ var splicer = require('labeled-stream-splicer')
 var pack = require('browser-pack')
 var runParallel = require('run-parallel')
 var deleteValue = require('object-delete-value')
+var values = require('object-values')
 
 var parseOpts = {
   ecmaVersion: 9,
@@ -275,9 +276,6 @@ function createSplitter (b, opts) {
     })
   }
 
-  function values (object) {
-    return Object.keys(object).map(function (k) { return object[k] })
-  }
   function gatherDependencyIds (row, arr) {
     var deps = values(row.indexDeps)
     arr = arr || []
