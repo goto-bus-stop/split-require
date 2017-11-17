@@ -75,16 +75,27 @@ function transformSplitRequireCalls (file, opts) {
     }
 
     var splitVariables = createSplitRequireDetector()
+    var hasSplitRequireCall = false
     var result = transformAst(source, parseOpts, function (node) {
       splitVariables.visit(node)
 
       if (node[kIsSplitRequireCall]) {
         var arg = node.arguments[0]
         arg.edit.prepend('require(').append(')')
+        hasSplitRequireCall = true
       }
     })
 
-    cb(null, result + '') // no source maps because the change is prettae minimal.
+    // Pass through unchanged.
+    if (!hasSplitRequireCall) {
+      return cb(null, source)
+    }
+
+    var text = result.toString()
+    if (opts && opts._flags && opts._flags.debug) {
+      text += '\n' + convert.fromObject(result.map).toComment()
+    }
+    cb(null, text)
   }
 }
 
