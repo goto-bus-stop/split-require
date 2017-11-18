@@ -1,8 +1,10 @@
 var path = require('path')
 var fs = require('fs')
+var crypto = require('crypto')
 var transformAst = require('transform-ast')
 var convert = require('convert-source-map')
 var through = require('through2')
+var to = require('flush-write-stream')
 var eos = require('end-of-stream')
 var splicer = require('labeled-stream-splicer')
 var pack = require('browser-pack')
@@ -248,12 +250,14 @@ function createSplitter (b, opts) {
 
     runParallel(pipelines, function (err, mappings) {
       if (err) return cb(err)
+      var sri = {}
       mappings = mappings.reduce(function (obj, x) {
         obj[x.entry] = path.join(publicPath, x.filename)
+        if (x.integrity) sri[x.entry] = x.integrity
         return obj
       }, {})
 
-      self.push(makeMappingsRow(mappings))
+      self.push(makeMappingsRow(mappings, sri))
 
       // Expose the `split-require` function so dynamic bundles can access it.
       runtimeRow.expose = true
@@ -287,6 +291,25 @@ function createSplitter (b, opts) {
       basename = name
     })
 
+    var ondone = done
+    if (opts.sri) {
+      ondone = after(2, ondone)
+      var sri = createSri(opts.sri).on('error', cb)
+      eos(pipeline.pipe(sri), ondone)
+    }
+
+    pipeline.on('error', cb)
+    writer.on('error', cb)
+    eos(writer, ondone)
+
+    function done () {
+      cb(null, {
+        entry: entryId,
+        filename: basename,
+        integrity: opts.sri ? sri.value : null
+      })
+    }
+
     pipeline.write(makeDynamicEntryRow(entry))
     pipeline.write(entry)
     depRows.forEach(function (depId) {
@@ -294,12 +317,6 @@ function createSplitter (b, opts) {
       pipeline.write(dep)
     })
     pipeline.end()
-
-    pipeline.on('error', cb)
-    writer.on('error', cb)
-    eos(writer, function () {
-      cb(null, { entry: entryId, filename: basename })
-    })
   }
 
   function gatherDependencyIds (row, arr) {
@@ -352,10 +369,17 @@ function createSplitter (b, opts) {
   }
 
   // Create a module that registers the entry id → bundle filename mappings.
-  function makeMappingsRow (mappings) {
+  function makeMappingsRow (mappings, integrity) {
     return {
       id: 'split_require_mappings',
-      source: 'require("split-require").b = ' + JSON.stringify(mappings) + ';',
+      source: isEmpty(integrity) ? (
+        'require("split-require").b = ' + JSON.stringify(mappings) + ';'
+      ) : (
+        'var sr = require("split-require");\n' +
+        'sr.b = ' + JSON.stringify(mappings) + ';\n' +
+        'sr.s = ' + JSON.stringify(integrity) + ';\n' +
+        'sr.c = "anonymous";'
+      ),
       entry: true,
       order: 0,
       deps: { 'split-require': runtimeRow.id },
@@ -378,6 +402,33 @@ function createSplitter (b, opts) {
         'split-require': runtimeRow.index,
         a: entry.index
       }
+    }
+  }
+}
+function createSri (type) {
+  var hash = crypto.createHash(type)
+  return to(ondata, onend)
+
+  function ondata (chunk, enc, cb) {
+    hash.update(chunk)
+    cb()
+  }
+  function onend (cb) {
+    this.value = type + '-' + hash.digest('base64')
+    cb()
+  }
+}
+
+function isEmpty (obj) {
+  for (var i in obj) return false
+  return true
+}
+
+function after (n, cb) {
+  var i = 0
+  return function () {
+    if (++i === n) {
+      cb()
     }
   }
 }

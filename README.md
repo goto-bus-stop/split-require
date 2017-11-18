@@ -132,6 +132,16 @@ The default is `./`, outputting in the current working directory.
 Public path to load dynamic bundles from.
 Defaults to `./`, so dynamic bundle #1 is loaded as `./bundle.1.js`.
 
+### `--sri`
+
+Hash algorithm to use for subresource integrity. By default, subresource
+integrity is not used.
+
+When enabled, the runtime loader will add `crossorigin` and `integrity`
+attributes to dynamically loaded bundles.
+
+One of `sha256`, `sha384`, `sha512`.
+
 ## Browserify Plugin API Usage
 
 ```js
@@ -223,6 +233,16 @@ b.plugin(splitRequire, {
 
 Public path to load dynamic bundles from.
 Defaults to `./`, so dynamic bundle #1 is loaded as `./bundle.1.js`.
+
+### `sri`
+
+Hash algorithm to use for subresource integrity. By default, subresource
+integrity is not used.
+
+When enabled, the runtime loader will add `crossorigin` and `integrity`
+attributes to dynamically loaded bundles.
+
+One of `sha256`, `sha384`, `sha512`.
 
 ### Events
 
