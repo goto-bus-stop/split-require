@@ -39,8 +39,14 @@ function load (index, cb) {
   // The <script> element for this bundle was already added.
   if (prev) return
 
+  var integrity = load.s[index]
+  var crossOrigin = load.c
+
   var s = document.createElement('script')
   s.async = true
+  if (crossOrigin) s.crossOrigin = crossOrigin
+  if (integrity) s.integrity = integrity
+
   s.type = 'application/javascript'
   s.src = url
   s.onerror = function () {
@@ -74,6 +80,10 @@ function loadLocal (requirer, onload) {
 
 // Map dynamic bundle entry point IDs to URLs.
 load.b = {}
+// Subresource integrity hashes
+load.s = {}
+// Cross-origin loading
+load.c = null
 
 // Used by the bundle.
 load.l = loadedBundle
