@@ -208,3 +208,28 @@ test('naming bundles by emitting `name` event on a stream', function (t) {
     t.end()
   }
 })
+
+test('--full-paths', function (t) {
+  var entry = path.join(__dirname, 'chain', 'app.js')
+  var actualDir = path.join(__dirname, 'chain', 'actual-full-paths')
+
+  rimraf.sync(actualDir)
+  mkdirp.sync(actualDir)
+
+  browserify(entry, { fullPaths: true })
+    .plugin(splitRequirePath)
+    .plugin(splitRequirePlugin, { dir: actualDir })
+    .bundle()
+    .pipe(fs.createWriteStream(path.join(actualDir, 'bundle.js')))
+    .on('error', t.fail)
+    .on('finish', onbuilt)
+
+  function onbuilt () {
+    var actual = readTree.sync(actualDir, { encoding: 'utf8' })
+    t.deepEqual(Object.keys(actual).sort(), [
+      'bundle.1.js', 'bundle.2.js', 'bundle.3.js', 'bundle.4.js', 'bundle.js'
+    ], 'should have generated 5 files')
+    rimraf.sync(actualDir)
+    t.end()
+  }
+})

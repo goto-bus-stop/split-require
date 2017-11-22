@@ -114,8 +114,13 @@ module.exports.createStream = createSplitter
 
 function createSplitter (b, opts) {
   var outputDir = opts.dir || './'
+  var fallbackBundleId = 1
   var outname = opts.filename || function (bundle) {
-    return 'bundle.' + bundle.id + '.js'
+    var id = String(bundle.index || bundle.id)
+    if (!/^[\w\d]+$/.test(id)) {
+      id = fallbackBundleId++
+    }
+    return 'bundle.' + id + '.js'
   }
   var createOutputStream = opts.output || function (bundleName) {
     return fs.createWriteStream(path.join(outputDir, bundleName))
@@ -148,7 +153,7 @@ function createSplitter (b, opts) {
     }
 
     rows.push(row)
-    rowsById[row.index] = row
+    rowsById[row.id] = row
 
     cb(null)
   }
@@ -172,13 +177,13 @@ function createSplitter (b, opts) {
       var row = getRow(imp.row)
       var dep = getRow(imp.dep)
       deleteValue(row.deps, dep.id)
-      deleteValue(row.indexDeps, dep.index)
+      if (row.indexDeps) deleteValue(row.indexDeps, dep.index)
     })
 
     // Collect rows that should be in the main bundle.
     var mainRows = []
     rows.filter(function (row) { return row.entry }).forEach(function (row) {
-      mainRows.push(row.index)
+      mainRows.push(row.id)
       gatherDependencyIds(row, mainRows)
     })
 
@@ -188,7 +193,7 @@ function createSplitter (b, opts) {
       var row = getRow(imp.row)
       var depEntry = getRow(imp.dep)
       var node = imp.node
-      if (mainRows.includes(depEntry.index)) {
+      if (mainRows.includes(depEntry.id)) {
         // this entry point is also non-dynamically required by the main bundle.
         // we should not move it into a dynamic bundle.
         node.callee.edit.append('.t')
@@ -198,7 +203,7 @@ function createSplitter (b, opts) {
 
         // add the dependency back
         row.deps[depEntry.id] = depEntry.id
-        row.indexDeps[depEntry.id] = depEntry.index
+        if (row.indexDeps) row.indexDeps[depEntry.id] = depEntry.index
         return
       }
       var depRows = gatherDependencyIds(depEntry).filter(function (id) {
@@ -212,7 +217,7 @@ function createSplitter (b, opts) {
         return true
       })
 
-      dynamicBundles[depEntry.index] = depRows
+      dynamicBundles[depEntry.id] = depRows
     })
 
     // No more source transforms after this point, save transformed source code
@@ -288,19 +293,19 @@ function createSplitter (b, opts) {
   }
 
   function gatherDependencyIds (row, arr) {
-    var deps = values(row.indexDeps)
+    var deps = values(row.deps)
     arr = arr || []
 
     deps.forEach(function (id) {
       var dep = rowsById[id]
-      if (!dep || arr.includes(dep.index)) {
+      if (!dep || arr.includes(dep.id)) {
         return
       }
       // not sure why this is needed yet,
       // sometimes `id` is the helper path and that doesnt exist at this point
       // in the rowsById map
       if (dep) {
-        arr.push(dep.index)
+        arr.push(dep.id)
         gatherDependencyIds(dep, arr)
       }
     })
@@ -320,7 +325,7 @@ function createSplitter (b, opts) {
     // We need to get the `.arguments[0]` twice because at this point the call looks like
     // `splitRequire(require('xyz'))`
     var requirePath = node.arguments[0].arguments[0].value
-    var resolved = row.indexDeps[requirePath]
+    var resolved = row.deps[requirePath]
     // If `requirePath` was already a resolved dependency index (eg. thanks to bundle-collapser)
     // we should just use that
     if (resolved == null) {
@@ -329,7 +334,7 @@ function createSplitter (b, opts) {
 
     node.arguments[0].edit.update(JSON.stringify(resolved))
 
-    queueSplitRequire(row.index, resolved, node)
+    queueSplitRequire(row.id, resolved, node)
   }
 
   function getRow (id) {
@@ -352,8 +357,8 @@ function createSplitter (b, opts) {
   // with the dynamic entry point's exports.
   function makeDynamicEntryRow (entry) {
     return {
-      id: 'entry' + entry.index,
-      source: 'require("split-require").l(' + JSON.stringify(entry.index) + ', require("a"));',
+      id: 'entry' + entry.id,
+      source: 'require("split-require").l(' + JSON.stringify(entry.id) + ', require("a"));',
       entry: true,
       deps: {
         'split-require': runtimeRow.id,
