@@ -48,12 +48,17 @@ function loadedBundle (index, result) {
 }
 
 // "Load" a module that we know is included in this bundle.
+var nextTick = window.setImmediate || window.setTimeout
 function loadLocal (requirer, onload) {
-  try {
-    onload(null, requirer())
-  } catch (err) {
-    onload(err)
-  }
+  nextTick(function () {
+    // Just execute the module if no callback is provided
+    if (!onload) return requirer()
+    try {
+      onload(null, requirer())
+    } catch (err) {
+      onload(err)
+    }
+  })
 }
 
 // Map dynamic bundle entry point IDs to URLs.
