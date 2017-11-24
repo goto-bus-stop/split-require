@@ -18,6 +18,7 @@ var parseOpts = {
 var runtimePath = require.resolve('./browser')
 // Used to tag nodes that are splitRequire() calls.
 var kIsSplitRequireCall = Symbol('is split-require call')
+var kIsBoundSrCall = Symbol('is bound split-require call')
 
 function mayContainSplitRequire (str) {
   return str.includes('split-require')
@@ -48,6 +49,13 @@ function createSplitRequireDetector () {
     // var sr = require('split-require'); sr(...args)
     if (node.type === 'CallExpression' && node.callee.type === 'Identifier' && check(node.callee.name)) {
       node[kIsSplitRequireCall] = true
+    }
+    // var sr = require('split-require'); var load = sr.bind(null, './xyz')
+    if (node.type === 'CallExpression' &&
+        node.callee.type === 'MemberExpression' &&
+        node.callee.object.type === 'Identifier' && check(node.callee.object.name) &&
+        node.callee.property.type === 'Identifier' && node.callee.property.name === 'bind') {
+      node[kIsBoundSrCall] = true
     }
     return false
   }
@@ -81,6 +89,11 @@ function transformSplitRequireCalls (file, opts) {
 
       if (node[kIsSplitRequireCall]) {
         var arg = node.arguments[0]
+        arg.edit.prepend('require(').append(')')
+        hasSplitRequireCall = true
+      }
+      if (node[kIsBoundSrCall]) {
+        var arg = node.arguments[1] // eslint-disable-line no-redeclare
         arg.edit.prepend('require(').append(')')
         hasSplitRequireCall = true
       }
@@ -143,6 +156,9 @@ function createSplitter (b, opts) {
         if (node[kIsSplitRequireCall]) {
           processSplitRequire(row, node)
         }
+        if (node[kIsBoundSrCall]) {
+          processBoundSplitRequire(row, node)
+        }
       })
 
       row.transformable = result
@@ -196,10 +212,13 @@ function createSplitter (b, opts) {
       if (mainRows.includes(depEntry.id)) {
         // this entry point is also non-dynamically required by the main bundle.
         // we should not move it into a dynamic bundle.
-        node.callee.edit.append('.t')
-        // wrap this in a closure so we call `require()` asynchronously,
-        // just like if it was actually dynamically loaded
-        node.arguments[0].edit.prepend('function(){return require(').append(')}')
+        if (node[kIsBoundSrCall]) {
+          node.callee.object.edit.append('.t')
+          node.arguments[1].edit.prepend('function(){return require(').append(')}')
+        } else {
+          node.callee.edit.append('.t')
+          node.arguments[0].edit.prepend('function(){return require(').append(')}')
+        }
 
         // add the dependency back
         row.deps[depEntry.id] = depEntry.id
@@ -333,6 +352,18 @@ function createSplitter (b, opts) {
     }
 
     node.arguments[0].edit.update(JSON.stringify(resolved))
+
+    queueSplitRequire(row.id, resolved, node)
+  }
+
+  function processBoundSplitRequire (row, node) {
+    var requirePath = node.arguments[1].arguments[0].value
+    var resolved = row.deps[requirePath]
+    if (resolved == null) {
+      resolved = requirePath
+    }
+
+    node.arguments[1].edit.update(JSON.stringify(resolved))
 
     queueSplitRequire(row.id, resolved, node)
   }
