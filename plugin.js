@@ -100,7 +100,8 @@ function transformSplitRequireCalls (file, opts) {
 }
 
 module.exports = function splitRequirePlugin (b, opts) {
-  b.transform(transformSplitRequireCalls)
+  // Run this globally because it needs to run last (and because it is cheap)
+  b.transform(transformSplitRequireCalls, { global: true })
   b.on('reset', addHooks)
 
   addHooks()
