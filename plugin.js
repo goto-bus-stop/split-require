@@ -9,6 +9,7 @@ var pack = require('browser-pack')
 var runParallel = require('run-parallel')
 var deleteValue = require('object-delete-value')
 var values = require('object-values')
+var isRequire = require('estree-is-require')
 
 var parseOpts = {
   ecmaVersion: 9,
@@ -371,13 +372,4 @@ function createSplitter (b, opts) {
       }
     }
   }
-}
-
-function isRequire (node, filename) {
-  return node.type === 'CallExpression' &&
-    node.callee.type === 'Identifier' &&
-    node.callee.name === 'require' &&
-    node.arguments.length > 0 &&
-    node.arguments[0].type === 'Literal' &&
-    node.arguments[0].value === filename
 }
