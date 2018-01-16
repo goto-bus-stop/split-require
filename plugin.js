@@ -69,36 +69,25 @@ function transformSplitRequireCalls (file, opts) {
   return through(onwrite, onend)
   function onwrite (chunk, enc, cb) {
     source += chunk
-    cb(null)
+    cb(null, chunk)
   }
   function onend (cb) {
     if (!mayContainSplitRequire(source)) {
-      cb(null, source)
+      cb()
       return
     }
 
+    var self = this
     var splitVariables = createSplitRequireDetector()
-    var hasSplitRequireCall = false
-    var result = transformAst(source, parseOpts, function (node) {
+    transformAst(source, parseOpts, function (node) {
       splitVariables.visit(node)
 
       if (node[kIsSplitRequireCall]) {
         var arg = node.arguments[0]
-        arg.edit.prepend('require(').append(')')
-        hasSplitRequireCall = true
+        self.emit('dep', arg.value)
       }
     })
-
-    // Pass through unchanged.
-    if (!hasSplitRequireCall) {
-      return cb(null, source)
-    }
-
-    var text = result.toString()
-    if (opts && opts._flags && opts._flags.debug) {
-      text += '\n' + convert.fromObject(result.map).toComment()
-    }
-    cb(null, text)
+    cb()
   }
 }
 
@@ -351,7 +340,7 @@ function createSplitter (b, opts) {
   function processSplitRequire (row, node) {
     // We need to get the `.arguments[0]` twice because at this point the call looks like
     // `splitRequire(require('xyz'))`
-    var requirePath = node.arguments[0].arguments[0].value
+    var requirePath = node.arguments[0].value
     var resolved = row.deps[requirePath]
     // If `requirePath` was already a resolved dependency index (eg. thanks to bundle-collapser)
     // we should just use that
