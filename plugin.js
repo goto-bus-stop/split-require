@@ -171,6 +171,11 @@ function createSplitter (b, opts) {
       return
     }
 
+    if (!runtimeRow) {
+      cb(new Error('split-require: the split-require runtime helper was not bundled. Most likely this means that you are using two versions of split-require simultaneously.'))
+      return
+    }
+
     // Ensure the main bundle exports the helper etc.
     b._bpack.hasExports = true
 
