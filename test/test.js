@@ -258,3 +258,29 @@ test('syntax', function (t) {
     t.end()
   }
 })
+
+test('outpipe', function (t) {
+  var entry = path.join(__dirname, 'basic', 'app.js')
+  var actualDir = path.join(__dirname, 'basic', 'actual-outpipe')
+  var output = `uglifyjs > ${actualDir}/%f`
+
+  rimraf.sync(actualDir)
+  mkdirp.sync(actualDir)
+
+  browserify(entry, { fullPaths: true })
+    .plugin(splitRequirePath)
+    .plugin(splitRequirePlugin, { dir: output })
+    .bundle()
+    .pipe(fs.createWriteStream(path.join(actualDir, 'bundle.js')))
+    .on('error', t.fail)
+    .on('finish', onbuilt)
+
+  function onbuilt () {
+    var actual = readTree.sync(actualDir, { encoding: 'utf8' })
+    t.deepEqual(Object.keys(actual).sort(), [
+      'bundle.1.js', 'bundle.js'
+    ], 'should have generated 2 files')
+    rimraf.sync(actualDir)
+    t.end()
+  }
+})

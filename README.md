@@ -109,15 +109,23 @@ import('./SomeComponent').then(function (SomeComponent) {
 ## Browserify Plugin CLI Usage
 
 ```bash
-browserify ./entry -p [ split-require --dir /output/directory ]
+browserify ./entry -p [ split-require --out /output/directory ]
   > /output/directory/bundle.js
 ```
 
 ### Options
 
-#### `--dir`
+#### `--out`
 
-Set the folder to output dynamic bundles to. Defaults to `./`.
+Set the output for dynamic bundles. Use a folder path to place dynamic bundles
+in that folder. You can also use [`outpipe`](https://github.com/substack/outpipe)
+syntax: in that case use `%f` in place of the bundle name. For example:
+
+```bash
+-p [ split-require --out 'uglifyjs > /output/directory/%f' ]
+```
+
+The default is `./`, outputting in the current working directory.
 
 ### `--public`
 

@@ -10,6 +10,7 @@ var runParallel = require('run-parallel')
 var deleteValue = require('object-delete-value')
 var values = require('object-values')
 var isRequire = require('estree-is-require')
+var outpipe = require('outpipe')
 
 var parseOpts = {
   parser: require('acorn-node')
@@ -124,6 +125,9 @@ function createSplitter (b, opts) {
     return 'bundle.' + id + '.js'
   }
   var createOutputStream = opts.output || function (bundleName) {
+    if (outputDir.indexOf('%f') !== -1) {
+      return outpipe(outputDir.replace('%f', bundleName))
+    }
     return fs.createWriteStream(path.join(outputDir, bundleName))
   }
   var publicPath = opts.public || './'
