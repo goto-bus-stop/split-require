@@ -12,8 +12,7 @@ var values = require('object-values')
 var isRequire = require('estree-is-require')
 
 var parseOpts = {
-  ecmaVersion: 9,
-  allowReturnOutsideFunction: true
+  parser: require('acorn-node')
 }
 
 var runtimePath = require.resolve('./browser')

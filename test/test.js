@@ -233,3 +233,28 @@ test('--full-paths', function (t) {
     t.end()
   }
 })
+
+test('syntax', function (t) {
+  var entry = path.join(__dirname, 'syntax', 'app.js')
+  var actualDir = path.join(__dirname, 'syntax', 'actual')
+
+  rimraf.sync(actualDir)
+  mkdirp.sync(actualDir)
+
+  browserify(entry)
+    .plugin(splitRequirePath)
+    .plugin(splitRequirePlugin, { dir: actualDir })
+    .bundle()
+    .pipe(fs.createWriteStream(path.join(actualDir, 'bundle.js')))
+    .on('error', t.fail)
+    .on('finish', onbuilt)
+
+  function onbuilt () {
+    var actual = readTree.sync(actualDir, { encoding: 'utf8' })
+    t.deepEqual(Object.keys(actual).sort(), [
+      'bundle.3.js', 'bundle.js'
+    ], 'should have generated 2 files')
+    rimraf.sync(actualDir)
+    t.end()
+  }
+})
