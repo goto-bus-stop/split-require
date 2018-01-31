@@ -19,6 +19,7 @@
     "outpipe": "^1.1.1",
     "resolve": "^1.5.0",
     "run-parallel": "^1.1.6",
+    "through2": "^2.0.3",
     "transform-ast": "^2.2.1"
   },
   "devDependencies": {
@@ -27,6 +28,7 @@
     "concat-stream": "^1.6.0",
     "factor-bundle": "^2.5.0",
     "flush-write-stream": "^1.0.2",
+    "has-object-spread": "^1.0.0",
     "mkdirp": "^0.5.1",
     "read-file-tree": "^1.1.0",
     "rimraf": "^2.6.2",
