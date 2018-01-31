@@ -23,7 +23,7 @@ var runtimePath = require.resolve('./browser')
 var kIsSplitRequireCall = Symbol('is split-require call')
 
 function mayContainSplitRequire (str) {
-  return str.includes('split-require')
+  return str.indexOf('split-require') !== -1
 }
 
 function createSplitRequireDetector () {
@@ -56,7 +56,7 @@ function createSplitRequireDetector () {
   }
 
   function check (name) {
-    return splitVariables.includes(name)
+    return splitVariables.indexOf(name) !== -1
   }
 }
 
@@ -205,7 +205,7 @@ function createSplitter (b, opts) {
       var row = getRow(imp.row)
       var depEntry = getRow(imp.dep)
       var node = imp.node
-      if (mainRows.includes(depEntry.id)) {
+      if (mainRows.indexOf(depEntry.id) !== -1) {
         // this entry point is also non-dynamically required by the main bundle.
         // we should not move it into a dynamic bundle.
         node.callee.edit.append('.t')
@@ -222,7 +222,7 @@ function createSplitter (b, opts) {
         // If a row required by this dynamic bundle also already exists in the main bundle,
         // expose it from the main bundle and use it from there instead of including it in
         // both the main and the dynamic bundles.
-        if (mainRows.includes(id)) {
+        if (mainRows.indexOf(id) !== -1) {
           getRow(id).expose = true
           return false
         }
@@ -325,7 +325,7 @@ function createSplitter (b, opts) {
 
     deps.forEach(function (id) {
       var dep = rowsById[id]
-      if (!dep || arr.includes(dep.id)) {
+      if (!dep || arr.indexOf(dep.id) !== -1) {
         return
       }
       // not sure why this is needed yet,
