@@ -1,7 +1,7 @@
 {
   "name": "split-require",
   "description": "Bundle splitting for CommonJS and ES modules (dynamic `import()`) in browserify",
-  "version": "2.0.4",
+  "version": "2.1.0",
   "bugs": {
     "url": "https://github.com/goto-bus-stop/split-require/issues"
   },
