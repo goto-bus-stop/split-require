@@ -7,6 +7,7 @@ var rimraf = require('rimraf')
 var mkdirp = require('mkdirp')
 var to = require('flush-write-stream')
 var concat = require('concat-stream')
+var hasObjectSpread = require('has-object-spread')
 var splitRequirePlugin = require('../plugin')
 
 function splitRequirePath (b) {
@@ -234,7 +235,7 @@ test('--full-paths', function (t) {
   }
 })
 
-test('syntax', function (t) {
+test('syntax', { skip: !hasObjectSpread() }, function (t) {
   var entry = path.join(__dirname, 'syntax', 'app.js')
   var actualDir = path.join(__dirname, 'syntax', 'actual')
 

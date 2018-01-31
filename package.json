@@ -28,6 +28,7 @@
     "concat-stream": "^1.6.0",
     "factor-bundle": "^2.5.0",
     "flush-write-stream": "^1.0.2",
+    "has-object-spread": "^1.0.0",
     "mkdirp": "^0.5.1",
     "read-file-tree": "^1.1.0",
     "rimraf": "^2.6.2",
