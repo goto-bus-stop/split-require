@@ -270,7 +270,7 @@ test('outpipe', function (t) {
 
   browserify(entry, { fullPaths: true })
     .plugin(splitRequirePath)
-    .plugin(splitRequirePlugin, { dir: output })
+    .plugin(splitRequirePlugin, { out: output })
     .bundle()
     .pipe(fs.createWriteStream(path.join(actualDir, 'bundle.js')))
     .on('error', t.fail)

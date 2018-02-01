@@ -117,7 +117,7 @@ module.exports = function splitRequirePlugin (b, opts) {
 module.exports.createStream = createSplitter
 
 function createSplitter (b, opts) {
-  var outputDir = opts.dir || './'
+  var outputDir = opts.out || opts.dir || './' // .dir is deprecated
   var fallbackBundleId = 1
   var outname = opts.filename || function (bundle) {
     var id = String(bundle.index || bundle.id)
