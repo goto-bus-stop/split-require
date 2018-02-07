@@ -1,3 +1,5 @@
+'use strict'
+
 var path = require('path')
 var callerPath = require('caller-path')
 var resolve = require('resolve')
