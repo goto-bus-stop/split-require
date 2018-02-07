@@ -77,6 +77,10 @@ function transformSplitRequireCalls (file, opts) {
       return
     }
 
+    if (this.listenerCount('dep') === 0) {
+      throw new Error('split-require requires browserify v16 or up')
+    }
+
     var self = this
     var splitVariables = createSplitRequireDetector()
     transformAst(source, parseOpts, function (node) {
