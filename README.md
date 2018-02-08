@@ -81,7 +81,6 @@ Add the browserify plugin as described below in order to make it work in the bro
 
 ### `import()`
 
-`split-require` also comes with a transform for ES modules `import()` syntax:
 You can use `split-require` with ES modules `import()` syntax using the
 [Babel plugin](https://github.com/goto-bus-stop/babel-plugin-dynamic-import-split-require).
 
