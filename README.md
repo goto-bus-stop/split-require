@@ -8,6 +8,9 @@ initial load faster.
 This module works without a compile step on the server, and in the browser with
 the browserify plugin.
 
+> NOTE: split-require v3+ works with browserify 16 and newer. If you are using
+> an older browserify version and can't upgrade, use split-require v2.
+
 [What?](#what) -
 [Install](#install) -
 [Usage](#usage) -
