@@ -13,51 +13,35 @@ var deleteValue = require('object-delete-value')
 var values = require('object-values')
 var isRequire = require('estree-is-require')
 var outpipe = require('outpipe')
-
-var parseOpts = {
-  parser: require('acorn-node')
-}
+var walk = require('estree-walk')
+var scan = require('scope-analyzer')
+var acorn = require('acorn-node')
 
 var runtimePath = require.resolve('./browser')
-// Used to tag nodes that are splitRequire() calls.
-var kIsSplitRequireCall = Symbol('is split-require call')
 
 function mayContainSplitRequire (str) {
   return str.indexOf('split-require') !== -1
 }
 
-function createSplitRequireDetector () {
-  var splitVariables = []
-
-  return {
-    visit: visit,
-    check: check
-  }
-
-  function visit (node) {
+function detectSplitRequireCalls (ast, cb) {
+  scan.crawl(ast)
+  walk(ast, function (node) {
+    var binding
     if (isRequire(node, 'split-require')) {
       if (node.parent.type === 'VariableDeclarator') {
-        splitVariables.push(node.parent.id.name)
+        // var sr = require('split-require')
+        binding = scan.getBinding(node.parent.id)
+        if (binding) binding.getReferences().slice(1).forEach(cb)
+      } else if (node.parent.type === 'AssignmentExpression') {
+        // sr = require('split-require')
+        binding = scan.getBinding(node.parent.left)
+        if (binding) binding.getReferences().slice(1).forEach(cb)
+      } else {
+        // require('split-require')(...args)
+        cb(node)
       }
-      if (node.parent.type === 'AssignmentExpression') {
-        splitVariables.push(node.parent.left.name)
-      }
-      // require('split-require')(...args)
-      if (node.parent.type === 'CallExpression') {
-        node.parent[kIsSplitRequireCall] = true
-      }
-      return true
     }
-    // var sr = require('split-require'); sr(...args)
-    if (node.type === 'CallExpression' && node.callee.type === 'Identifier' && check(node.callee.name)) {
-      node[kIsSplitRequireCall] = true
-    }
-    return false
-  }
-
-  function check (name) {
-    return splitVariables.indexOf(name) !== -1
-  }
+  })
 }
 
 /**
@@ -82,15 +66,14 @@ function transformSplitRequireCalls (file, opts) {
     }
 
     var self = this
-    var splitVariables = createSplitRequireDetector()
-    transformAst(source, parseOpts, function (node) {
-      splitVariables.visit(node)
-
-      if (node[kIsSplitRequireCall]) {
-        var arg = node.arguments[0]
+    var ast = acorn.parse(source)
+    detectSplitRequireCalls(ast, function (node) {
+      if (node.parent.type === 'CallExpression') {
+        var arg = node.parent.arguments[0]
         self.emit('dep', arg.value)
       }
     })
+
     cb()
   }
 }
@@ -136,16 +119,14 @@ function createSplitter (b, opts) {
 
   function onwrite (row, enc, cb) {
     if (mayContainSplitRequire(row.source)) {
-      var splitVariables = createSplitRequireDetector()
-      var result = transformAst(row.source, parseOpts, function (node) {
-        splitVariables.visit(node)
-
-        if (node[kIsSplitRequireCall]) {
-          processSplitRequire(row, node)
+      var ast = acorn.parse(row.source)
+      var fakeParser = { parse: function () { return ast } }
+      row.transformable = transformAst(row.source, { parser: fakeParser }, function (node) {})
+      detectSplitRequireCalls(ast, function (node) {
+        if (node.parent.type === 'CallExpression' && node.parent.callee === node) {
+          processSplitRequire(row, node.parent)
         }
       })
-
-      row.transformable = result
     }
 
     if (row.file === runtimePath) {
