@@ -120,8 +120,7 @@ function createSplitter (b, opts) {
   function onwrite (row, enc, cb) {
     if (mayContainSplitRequire(row.source)) {
       var ast = acorn.parse(row.source)
-      var fakeParser = { parse: function () { return ast } }
-      row.transformable = transformAst(row.source, { parser: fakeParser }, function (node) {})
+      row.transformable = transformAst(row.source, { ast: ast })
       detectSplitRequireCalls(ast, function (node) {
         if (node.parent.type === 'CallExpression' && node.parent.callee === node) {
           processSplitRequire(row, node.parent)
