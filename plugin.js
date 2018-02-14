@@ -253,9 +253,10 @@ function createSplitter (b, opts) {
       'wrap', []
     ])
 
-    b.emit('split.pipeline', pipeline)
-
     var basename = outname(entry)
+
+    b.emit('split.pipeline', pipeline, entry, basename)
+
     var writer = pipeline.pipe(createOutputStream(basename, entry))
     // allow the output stream to assign a name asynchronously,
     // eg. one based on the hash of the bundle contents

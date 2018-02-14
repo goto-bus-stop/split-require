@@ -248,7 +248,7 @@ One of `sha256`, `sha384`, `sha512`.
 
 ### Events
 
-#### `b.on('split.pipeline', function (pipeline) {})`
+#### `b.on('split.pipeline', function (pipeline, entry, basename) {})`
 
 `split-require` emits an event on the browserify instance for each pipeline it
 creates.
@@ -257,6 +257,9 @@ creates.
 
  - `'pack'` - [browser-pack](https://github.com/browserify/browser-pack)
  - `'wrap'` - apply final wrapping
+
+`entry` is the browserify row object for the entry point of the dynamic bundle.
+`basename` is the name of the dynamic bundle file.
 
 ## License
 
