@@ -272,11 +272,13 @@ test('outpipe', function (t) {
     .plugin(splitRequirePath)
     .plugin(splitRequirePlugin, { out: output })
     .bundle()
-    .pipe(fs.createWriteStream(path.join(actualDir, 'bundle.js')))
+    .pipe(fs.createWriteStream(path.join(actualDir, 'bundle.js')).on('finish', onbuilt))
     .on('error', t.fail)
     .on('finish', onbuilt)
 
+  var i = 0
   function onbuilt () {
+    if (++i < 2) return
     var actual = readTree.sync(actualDir, { encoding: 'utf8' })
     t.deepEqual(Object.keys(actual).sort(), [
       'bundle.1.js', 'bundle.js'
