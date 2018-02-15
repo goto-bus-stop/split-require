@@ -2,25 +2,33 @@
 
 var path = require('path')
 var callerPath = require('caller-path')
-var resolve = require('resolve')
+var resolvePath = require('resolve')
+
+function attachCb (promise, cb) {
+  if (cb) {
+    promise.then(
+      function (result) { cb(null, result) },
+      function (err) { cb(err) }
+    )
+  }
+  return promise
+}
 
 module.exports = function load (filename, cb) {
   if (typeof filename === 'object' && filename._options) {
     return require('./plugin')(filename, cb)
   }
 
-  if (!cb) cb = function () {}
-
   var basedir = path.dirname(callerPath())
-  resolve(filename, { basedir: basedir }, function (err, fullpath) {
-    if (err) return cb(err)
+  var resolved = new Promise(function (resolve, reject) {
+    resolvePath(filename, { basedir: basedir }, function (err, fullpath) {
+      if (err) return reject(err)
 
-    try {
-      cb(null, require(fullpath))
-    } catch (err) {
-      cb(err)
-    }
+      resolve(fullpath)
+    })
   })
+
+  return attachCb(resolved.then(require), cb)
 }
 
 Object.defineProperty(module.exports, 'createStream', {
