@@ -17,28 +17,27 @@ var walk = require('estree-walk')
 var scan = require('scope-analyzer')
 var acorn = require('acorn-node')
 
-var runtimePath = require.resolve('./browser')
-
 function mayContainSplitRequire (str) {
   return str.indexOf('split-require') !== -1
 }
 
-function detectSplitRequireCalls (ast, cb) {
+function detectSplitRequireCalls (ast, onreference, onrequire) {
   scan.crawl(ast)
   walk(ast, function (node) {
     var binding
     if (isRequire(node, 'split-require')) {
+      if (onrequire) onrequire(node)
       if (node.parent.type === 'VariableDeclarator') {
         // var sr = require('split-require')
         binding = scan.getBinding(node.parent.id)
-        if (binding) binding.getReferences().slice(1).forEach(cb)
+        if (binding) binding.getReferences().slice(1).forEach(onreference)
       } else if (node.parent.type === 'AssignmentExpression') {
         // sr = require('split-require')
         binding = scan.getBinding(node.parent.left)
-        if (binding) binding.getReferences().slice(1).forEach(cb)
+        if (binding) binding.getReferences().slice(1).forEach(onreference)
       } else {
         // require('split-require')(...args)
-        cb(node)
+        onreference(node)
       }
     }
   })
@@ -114,6 +113,7 @@ function createSplitter (b, opts) {
   var rowsById = Object.create(null)
   var splitRequires = []
   var runtimeRow = null
+  var runtimeId = null
 
   return through.obj(onwrite, onend)
 
@@ -125,10 +125,17 @@ function createSplitter (b, opts) {
         if (node.parent.type === 'CallExpression' && node.parent.callee === node) {
           processSplitRequire(row, node.parent)
         }
+      }, function (node) {
+        // Mark the thing we imported as the runtime row.
+        var importPath = getStringValue(node.arguments[0])
+        runtimeId = row.deps[importPath]
+        if (rowsById[runtimeId]) {
+          runtimeRow = rowsById[runtimeId]
+        }
       })
     }
 
-    if (row.file === runtimePath) {
+    if (runtimeId && String(row.id) === String(runtimeId)) {
       runtimeRow = row
     }
 
@@ -404,5 +411,12 @@ function after (n, cb) {
     if (++i === n) {
       cb()
     }
+  }
+}
+
+function getStringValue (node) {
+  if (node.type === 'Literal') return node.value
+  if (node.type === 'TemplateLiteral' && node.quasis.length === 1) {
+    return node.quasis[0].value.cooked
   }
 }
