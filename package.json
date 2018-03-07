@@ -26,16 +26,18 @@
   },
   "devDependencies": {
     "browser-pack-flat": "^2.5.0",
-    "browserify": "^16.0.0",
+    "browserify": "^16.1.1",
     "concat-stream": "^1.6.0",
     "factor-bundle": "^2.5.0",
     "has-object-spread": "^1.0.0",
     "mkdirp": "^0.5.1",
     "read-file-tree": "^1.1.0",
     "rimraf": "^2.6.2",
+    "run-series": "^1.1.4",
     "standard": "^10.0.3",
     "tap-diff": "^0.1.1",
     "tape": "^4.8.0",
+    "tape-run": "^3.0.4",
     "uglify-es": "^3.3.7"
   },
   "homepage": "https://github.com/goto-bus-stop/split-require#readme",
@@ -48,7 +50,10 @@
     "url": "git+https://github.com/goto-bus-stop/split-require.git"
   },
   "scripts": {
-    "test": "standard && tape test/test.js | tap-diff"
+    "test": "npm run test:lint && npm run test:tap && npm run test:browser",
+    "test:lint": "standard",
+    "test:tap": "tape test/test.js | tap-diff",
+    "test:browser": "browserify -p [ ./plugin --out ./test/browser/static ] -r ./browser:split-require test/browser | tape-run --static ./test/browser/static"
   },
   "standard": {
     "ignore": [
