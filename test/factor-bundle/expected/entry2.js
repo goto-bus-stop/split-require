@@ -18,7 +18,7 @@ var receivers = {}
 function promisify (cb) {
   var res
   var rej
-  var p = new Promise(function (resolve, reject) {
+  var p = typeof Promise !== 'undefined' && new Promise(function (resolve, reject) {
     res = resolve
     rej = reject
   })
