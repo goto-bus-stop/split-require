@@ -33,6 +33,8 @@ function testFixture (t, name, opts, message, next) {
   mkdirp.sync(actualDir)
 
   browserify(entry)
+    // Don't include the runtime, so tests don't immediately break when changing its source.
+    .external('split-require')
     .plugin(splitRequirePath)
     .plugin(plugin, opts)
     .bundle()

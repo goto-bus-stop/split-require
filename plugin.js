@@ -156,6 +156,14 @@ function createSplitter (b, opts) {
       return
     }
 
+    // Assume external?
+    if (!runtimeRow && runtimeId) {
+      runtimeRow = {
+        id: runtimeId,
+        index: runtimeId
+      }
+    }
+
     if (!runtimeRow) {
       cb(new Error('split-require: the split-require runtime helper was not bundled. Most likely this means that you are using two versions of split-require simultaneously.'))
       return
