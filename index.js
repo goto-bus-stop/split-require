@@ -20,12 +20,13 @@ function attachCb (promise, cb) {
   return promise
 }
 
-var captureBundles = new Map()
+var captureBundles
+var captureHooks
+var activeCaptures = 0
+if (asyncHooks) {
+  captureBundles = new Map()
 
-function capture (run, cb) {
-  if (!asyncHooks) throw new Error('async_hooks is not available. Upgrade your Node version to 8.1.0 or higher')
-
-  var hooks = asyncHooks.createHook({
+  captureHooks = asyncHooks.createHook({
     init: function (asyncId, type, triggerAsyncId) {
       // Inherit bundles list from the parent
       if (captureBundles.has(triggerAsyncId)) {
@@ -36,8 +37,13 @@ function capture (run, cb) {
       captureBundles.delete(asyncId)
     }
   })
+}
 
-  hooks.enable()
+function capture (run, cb) {
+  if (!asyncHooks) throw new Error('async_hooks is not available. Upgrade your Node version to 8.1.0 or higher')
+
+  if (activeCaptures === 0) captureHooks.enable()
+  activeCaptures++
 
   var currentBundles = []
   var asyncId = asyncHooks.executionAsyncId()
@@ -59,7 +65,12 @@ function capture (run, cb) {
 
   function ondone (err, result) {
     captureBundles.delete(asyncId) // no memory leak
-    hooks.disable()
+
+    activeCaptures--
+    if (activeCaptures === 0) {
+      captureHooks.disable()
+    }
+
     cb(err, result, currentBundles)
   }
 }
@@ -69,7 +80,7 @@ module.exports = function load (filename, cb) {
     return require('./plugin')(filename, cb)
   }
 
-  var currentBundles = asyncHooks && captureBundles.get(asyncHooks.executionAsyncId())
+  var currentBundles = asyncHooks ? captureBundles.get(asyncHooks.executionAsyncId()) : null
 
   var basedir = path.dirname(callerPath())
   var resolved = new Promise(function (resolve, reject) {
