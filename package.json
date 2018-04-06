@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "acorn-node": "^1.1.0",
-    "browser-pack": "^6.0.2",
+    "browser-pack": "6.0.4",
     "caller-path": "^2.0.0",
     "convert-source-map": "^1.5.0",
     "end-of-stream": "^1.4.0",
