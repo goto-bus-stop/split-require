@@ -36,6 +36,7 @@
     "run-series": "^1.1.4",
     "standard": "^10.0.3",
     "tap-diff": "^0.1.1",
+    "tap-min": "^1.2.2",
     "tape": "^4.8.0",
     "tape-run": "^3.0.4",
     "uglify-es": "^3.3.7"
@@ -50,10 +51,11 @@
     "url": "git+https://github.com/goto-bus-stop/split-require.git"
   },
   "scripts": {
-    "test": "npm run test:lint && npm run test:tap && npm run test:browser",
+    "test": "npm run test:lint && npm run test:tap && npm run test:server && npm run test:browser",
     "test:lint": "standard",
     "test:tap": "tape test/test.js | tap-diff",
-    "test:browser": "browserify -p [ ./plugin --out ./test/browser/static ] -r ./browser:split-require test/browser | tape-run --static ./test/browser/static"
+    "test:server": "tape test/capture.js | tap-min",
+    "test:browser": "browserify -p [ ./plugin --out ./test/browser/static ] -r ./browser:split-require test/browser | tape-run --static ./test/browser/static | tap-diff"
   },
   "standard": {
     "ignore": [

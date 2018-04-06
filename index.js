@@ -20,10 +20,10 @@ var captureBundles = new Map()
 function capture (run, cb) {
   var hooks = asyncHooks.createHook({
     init: function (asyncId, type, triggerAsyncId) {
+      // Inherit bundles list from the parent
       if (captureBundles.has(triggerAsyncId)) {
         captureBundles.set(asyncId, captureBundles.get(triggerAsyncId))
       }
-      require('fs').writeSync(2, '' + asyncId + ' ' + triggerAsyncId + ' ' + type + '\n')
     },
     destroy: function (asyncId) {
       captureBundles.delete(asyncId)
@@ -33,14 +33,27 @@ function capture (run, cb) {
   hooks.enable()
 
   var currentBundles = []
-  captureBundles.set(asyncHooks.executionAsyncId(), currentBundles)
+  var asyncId = asyncHooks.executionAsyncId()
+  captureBundles.set(asyncId, currentBundles)
+
+  if (!cb) {
+    var promise = new Promise(function (resolve, reject) {
+      cb = function (err, result, bundles) {
+        if (err) reject(err)
+        else resolve({ result: result, bundles: bundles })
+      }
+    })
+  }
 
   var p = run(ondone)
   if (p && p.then) p.then(function (result) { ondone(null, result) }, ondone)
 
-  function ondone () {
+  return promise
+
+  function ondone (err, result) {
+    captureBundles.delete(asyncId) // no memory leak
     hooks.disable()
-    cb(currentBundles)
+    cb(err, result, currentBundles)
   }
 }
 
@@ -50,7 +63,6 @@ module.exports = function load (filename, cb) {
   }
 
   var currentBundles = captureBundles.get(asyncHooks.executionAsyncId())
-  console.log('load', currentBundles)
 
   var basedir = path.dirname(callerPath())
   var resolved = new Promise(function (resolve, reject) {
