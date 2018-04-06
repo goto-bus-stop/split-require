@@ -41,3 +41,8 @@ test('capture', { skip: !hasAsyncHooks }, function (t) {
     }, 4 + Math.floor(Math.random() * 10))
   }
 })
+
+test('no capture', { skip: hasAsyncHooks }, function (t) {
+  t.plan(1)
+  t.pass('ok')
+})
