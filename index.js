@@ -3,7 +3,12 @@
 var path = require('path')
 var callerPath = require('caller-path')
 var resolvePath = require('resolve')
-var asyncHooks = require('async_hooks')
+var asyncHooks
+try {
+  asyncHooks = require('async_hooks')
+} catch (err) {
+  // async_hooks are not supported.
+}
 
 function attachCb (promise, cb) {
   if (cb) {
@@ -18,6 +23,8 @@ function attachCb (promise, cb) {
 var captureBundles = new Map()
 
 function capture (run, cb) {
+  if (!asyncHooks) throw new Error('async_hooks is not available. Upgrade your Node version to 8.1.0 or higher')
+
   var hooks = asyncHooks.createHook({
     init: function (asyncId, type, triggerAsyncId) {
       // Inherit bundles list from the parent
@@ -62,14 +69,16 @@ module.exports = function load (filename, cb) {
     return require('./plugin')(filename, cb)
   }
 
-  var currentBundles = captureBundles.get(asyncHooks.executionAsyncId())
+  var currentBundles = asyncHooks && captureBundles.get(asyncHooks.executionAsyncId())
 
   var basedir = path.dirname(callerPath())
   var resolved = new Promise(function (resolve, reject) {
     resolvePath(filename, { basedir: basedir }, function (err, fullpath) {
       if (err) return reject(err)
 
-      currentBundles.push(fullpath)
+      // Add the path to the bundle list if it is being captured
+      if (currentBundles) currentBundles.push(fullpath)
+
       resolve(fullpath)
     })
   })
