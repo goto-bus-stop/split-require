@@ -1,6 +1,15 @@
 var test = require('tape')
 var path = require('path')
 
+var hasAsyncHooks = (function () {
+  try {
+    require('async_hooks')
+    return true
+  } catch (err) {
+    return false
+  }
+})()
+
 var expected = {
   one: [
     path.join(__dirname, 'capture/view1.js'),
@@ -13,7 +22,7 @@ var expected = {
   ].sort()
 }
 
-test('capture', function (t) {
+test('capture', { skip: !hasAsyncHooks }, function (t) {
   t.plan(200)
   var app = require('./capture/app')
 
