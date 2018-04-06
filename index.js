@@ -46,8 +46,6 @@ function capture (run, cb) {
   activeCaptures++
 
   var currentBundles = []
-  var asyncId = asyncHooks.executionAsyncId()
-  captureBundles.set(asyncId, currentBundles)
 
   if (!cb) {
     var promise = new Promise(function (resolve, reject) {
@@ -58,20 +56,33 @@ function capture (run, cb) {
     })
   }
 
-  var p = run(ondone)
-  if (p && p.then) p.then(function (result) { ondone(null, result) }, ondone)
+  // Make sure we're in a new async execution context
+  // This way doing two .capture() calls side by side from the same
+  // sync function won't interfere
+  //
+  //   sr.capture(fn1)
+  //   sr.capture(fn2)
+  process.nextTick(newContext)
 
   return promise
 
-  function ondone (err, result) {
-    captureBundles.delete(asyncId) // no memory leak
+  function newContext () {
+    var asyncId = asyncHooks.executionAsyncId()
+    captureBundles.set(asyncId, currentBundles)
 
-    activeCaptures--
-    if (activeCaptures === 0) {
-      captureHooks.disable()
+    var p = run(ondone)
+    if (p && p.then) p.then(function (result) { ondone(null, result) }, ondone)
+
+    function ondone (err, result) {
+      captureBundles.delete(asyncId) // no memory leak
+
+      activeCaptures--
+      if (activeCaptures === 0) {
+        captureHooks.disable()
+      }
+
+      cb(err, result, currentBundles)
     }
-
-    cb(err, result, currentBundles)
   }
 }
 

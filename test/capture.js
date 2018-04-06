@@ -1,5 +1,6 @@
 var test = require('tape')
 var path = require('path')
+var sr = require('../')
 
 var hasAsyncHooks = (function () {
   try {
@@ -39,6 +40,25 @@ test('capture', { skip: !hasAsyncHooks }, function (t) {
         t.deepEqual(result.bundles.sort(), expected[which])
       }).catch(t.fail)
     }, 4 + Math.floor(Math.random() * 10))
+  }
+})
+
+test('capture sync', { skip: !hasAsyncHooks }, function (t) {
+  t.plan(20)
+  var render = require('./capture/render')
+
+  // similar to above, but every call originates in the same
+  // async context
+  for (var i = 0; i < 20; i++) {
+    (function (i) {
+      var which = i % 2 ? 'one' : 'two'
+
+      sr.capture(function () {
+        return render(which)
+      }).then(function (result) {
+        t.deepEqual(result.bundles.sort(), expected[which])
+      }).catch(t.fail)
+    }(i))
   }
 })
 
