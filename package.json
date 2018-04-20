@@ -32,6 +32,7 @@
     "factor-bundle": "^2.5.0",
     "has-object-spread": "^1.0.0",
     "mkdirp": "^0.5.1",
+    "proxyquire": "^2.0.1",
     "read-file-tree": "^1.1.0",
     "rimraf": "^2.6.2",
     "run-series": "^1.1.4",

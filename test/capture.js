@@ -3,6 +3,7 @@ var path = require('path')
 var hasAsyncHooks = require('has-async-hooks')()
 var mkdirp = require('mkdirp')
 var browserify = require('browserify')
+var proxyquire = require('proxyquire')
 var sr = require('../')
 
 var expected = {
@@ -71,6 +72,7 @@ test('capture bundles', { skip: !hasAsyncHooks }, function (t) {
   mkdirp.sync(outdir)
 
   browserify(entry)
+    .require(path.join(__dirname, '../'), { expose: 'split-require' })
     .plugin(sr, {
       dir: outdir,
       manifest: manifest
@@ -84,13 +86,15 @@ test('capture bundles', { skip: !hasAsyncHooks }, function (t) {
   function ssr () {
     sr.loadManifest(manifest)
     sr.capture(function (cb) {
-      require(entry)(cb.bind(null, null))
+      sr['@noCallThru'] = true // AAAAAAAAAAAAAAA
+      sr['@global'] = true // AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+      proxyquire(entry, { 'split-require': sr })(cb.bind(null, null))
     }, ondone)
   }
 
   function ondone (err, result, bundles) {
     t.ifError(err)
     t.equal(result, 146)
-    t.deepEqual(bundles, ['bundle.3.js'])
+    t.deepEqual(bundles, ['bundle.2.js'])
   }
 })
