@@ -1,6 +1,8 @@
 var test = require('tape')
 var path = require('path')
 var hasAsyncHooks = require('has-async-hooks')()
+var mkdirp = require('mkdirp')
+var browserify = require('browserify')
 var sr = require('../')
 
 var expected = {
@@ -45,7 +47,7 @@ test('capture sync', { skip: !hasAsyncHooks }, function (t) {
     (function (i) {
       var which = i % 2 ? 'one' : 'two'
 
-      sr.capture(function () {
+      sr.capture({ filenames: true }, function () {
         return render(which)
       }).then(function (result) {
         t.deepEqual(result.bundles.sort(), expected[which])
@@ -57,4 +59,38 @@ test('capture sync', { skip: !hasAsyncHooks }, function (t) {
 test('no capture', { skip: hasAsyncHooks }, function (t) {
   t.plan(1)
   t.pass('ok')
+})
+
+test('capture bundles', { skip: !hasAsyncHooks }, function (t) {
+  t.plan(4)
+
+  var outdir = path.join(__dirname, 'capture/actual/')
+  var manifest = path.join(outdir, 'split-require.json')
+  var entry = path.join(__dirname, 'basic/app.js')
+
+  mkdirp.sync(outdir)
+
+  browserify(entry)
+    .plugin(sr, {
+      dir: outdir,
+      manifest: manifest
+    })
+    .bundle(function (err, bundle) {
+      t.ifError(err)
+
+      ssr()
+    })
+
+  function ssr () {
+    sr.loadManifest(manifest)
+    sr.capture(function (cb) {
+      require(entry)(cb.bind(null, null))
+    }, ondone)
+  }
+
+  function ondone (err, result, bundles) {
+    t.ifError(err)
+    t.equal(result, 146)
+    t.deepEqual(bundles, ['bundle.3.js'])
+  }
 })

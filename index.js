@@ -1,5 +1,6 @@
 'use strict'
 
+var fs = require('fs')
 var path = require('path')
 var callerPath = require('caller-path')
 var resolvePath = require('resolve')
@@ -15,6 +16,8 @@ function attachCb (promise, cb) {
   }
   return promise
 }
+
+var bundleMappings
 
 var captureBundles
 var captureHooks
@@ -35,8 +38,21 @@ if (hasAsyncHooks) {
   })
 }
 
-function capture (run, cb) {
+function capture (opts, run, cb) {
+  if (typeof opts === 'function') {
+    cb = run
+    run = opts
+    opts = {}
+  }
+  if (!opts) opts = {}
+
   if (!hasAsyncHooks) throw new Error('async_hooks is not available. Upgrade your Node version to 8.1.0 or higher')
+  if (!bundleMappings && opts.filenames !== true) {
+    throw new Error('Load a manifest file before using splitRequire.capture(). ' +
+      'This is required to inform split-require about the bundle filenames. ' +
+      'If you want the filenames for the unbundled entry points instead, do ' +
+      '`splitRequire.capture({ filenames: true }, run, cb)`.')
+  }
 
   if (activeCaptures === 0) captureHooks.enable()
   activeCaptures++
@@ -64,7 +80,10 @@ function capture (run, cb) {
 
   function newContext () {
     var asyncId = asyncHooks.executionAsyncId()
-    captureBundles.set(asyncId, currentBundles)
+    captureBundles.set(asyncId, {
+      list: currentBundles,
+      filenames: opts.filenames === true
+    })
 
     var p = run(ondone)
     if (p && p.then) p.then(function (result) { ondone(null, result) }, ondone)
@@ -82,6 +101,20 @@ function capture (run, cb) {
   }
 }
 
+function loadManifest (manifest) {
+  if (!bundleMappings) bundleMappings = new Map()
+
+  var mappings = JSON.parse(fs.readFileSync(manifest, 'utf8'))
+  var basedir = path.dirname(path.resolve(manifest))
+  var publicPath = mappings.publicPath
+  var bundles = mappings.bundles
+  Object.keys(bundles).forEach(function (bundleName) {
+    bundles[bundleName].forEach(function (filename) {
+      bundleMappings.set(path.join(basedir, filename), path.join(publicPath, bundleName))
+    })
+  })
+}
+
 module.exports = function load (filename, cb) {
   if (typeof filename === 'object' && filename._options) {
     return require('./plugin')(filename, cb)
@@ -97,7 +130,15 @@ module.exports = function load (filename, cb) {
       if (err) return reject(err)
 
       // Add the path to the bundle list if it is being captured
-      if (currentBundles) currentBundles.push(fullpath)
+      if (currentBundles) {
+        if (currentBundles.filenames) {
+          currentBundles.list.push(fullpath)
+        } else {
+          var bundle = bundleMappings.get(fullpath)
+          if (!bundle) return reject(new Error('Could not find \'' + fullpath + '\' in the bundle manifest'))
+          currentBundles.list.push(bundle)
+        }
+      }
 
       resolve(fullpath)
     })
@@ -107,6 +148,7 @@ module.exports = function load (filename, cb) {
 }
 
 module.exports.capture = capture
+module.exports.loadManifest = loadManifest
 
 Object.defineProperty(module.exports, 'createStream', {
   configurable: true,
