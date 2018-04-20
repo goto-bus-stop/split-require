@@ -1,15 +1,7 @@
 var test = require('tape')
 var path = require('path')
+var hasAsyncHooks = require('has-async-hooks')()
 var sr = require('../')
-
-var hasAsyncHooks = (function () {
-  try {
-    require('async_hooks')
-    return true
-  } catch (err) {
-    return false
-  }
-})()
 
 var expected = {
   one: [
