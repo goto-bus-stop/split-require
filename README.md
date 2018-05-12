@@ -185,13 +185,13 @@ Other plugins that generate multiple outputs may need a similar treatment.
 Set the folder to output dynamic bundles to. Defaults to `./`.
 This is only necessary if the `output()` option is not used.
 
-#### `outname(entry)`
+#### `filename(entry)`
 
 Function that generates a name for a dynamic bundle.
 Receives the entry point row as the only parameter. The default is:
 
 ```js
-function outname (entry) {
+function filename (entry) {
   return 'bundle.' + entry.index + '.js'
 }
 ```
