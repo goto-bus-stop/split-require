@@ -240,7 +240,7 @@ function createSplitter (b, opts) {
       if (err) return cb(err)
       var sri = {}
       mappings = mappings.reduce(function (obj, x) {
-        obj[x.entry] = path.join(publicPath, x.filename)
+        obj[x.entry] = path.join(publicPath, x.filename).replace(/\\/g, '/')
         if (x.integrity) sri[x.entry] = x.integrity
         return obj
       }, {})
