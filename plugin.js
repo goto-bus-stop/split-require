@@ -13,7 +13,7 @@ var deleteValue = require('object-delete-value')
 var values = require('object-values')
 var isRequire = require('estree-is-require')
 var outpipe = require('outpipe')
-var walk = require('estree-walk')
+var dash = require('dash-ast')
 var scan = require('scope-analyzer')
 var acorn = require('acorn-node')
 
@@ -23,7 +23,7 @@ function mayContainSplitRequire (str) {
 
 function detectSplitRequireCalls (ast, onreference, onrequire) {
   scan.crawl(ast)
-  walk(ast, function (node) {
+  dash(ast, function (node) {
     var binding
     if (isRequire(node, 'split-require')) {
       if (onrequire) onrequire(node)
