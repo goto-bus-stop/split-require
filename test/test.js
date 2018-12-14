@@ -274,18 +274,19 @@ test('outpipe', function (t) {
     .plugin(splitRequirePath)
     .plugin(splitRequirePlugin, { out: output })
     .bundle()
-    .pipe(fs.createWriteStream(path.join(actualDir, 'bundle.js')).on('finish', onbuilt))
+    .pipe(fs.createWriteStream(path.join(actualDir, 'bundle.js')))
     .on('error', t.fail)
     .on('finish', onbuilt)
 
-  var i = 0
   function onbuilt () {
-    if (++i < 2) return
-    var actual = readTree.sync(actualDir, { encoding: 'utf8' })
-    t.deepEqual(Object.keys(actual).sort(), [
-      'bundle.1.js', 'bundle.js'
-    ], 'should have generated 2 files')
-    rimraf.sync(actualDir)
-    t.end()
+    // wait for a bit because it's not flushed yet
+    setTimeout(function () {
+      var actual = readTree.sync(actualDir, { encoding: 'utf8' })
+      t.deepEqual(Object.keys(actual).sort(), [
+        'bundle.1.js', 'bundle.js'
+      ], 'should have generated 2 files')
+      rimraf.sync(actualDir)
+      t.end()
+    }, 100)
   }
 })
