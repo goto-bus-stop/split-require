@@ -10,7 +10,6 @@ var splicer = require('labeled-stream-splicer')
 var pack = require('browser-pack')
 var runParallel = require('run-parallel')
 var deleteValue = require('object-delete-value')
-var values = require('object-values')
 var isRequire = require('estree-is-require')
 var outpipe = require('outpipe')
 var dash = require('dash-ast')
@@ -309,10 +308,12 @@ function createSplitter (b, opts) {
   }
 
   function gatherDependencyIds (row, arr) {
-    var deps = values(row.deps)
+    var sortedDeps = Object.keys(row.deps).sort().map(function (key) {
+      return row.deps[key]
+    })
     arr = arr || []
 
-    deps.forEach(function (id) {
+    sortedDeps.forEach(function (id) {
       var dep = rowsById[id]
       if (!dep || arr.indexOf(dep.id) !== -1) {
         return
