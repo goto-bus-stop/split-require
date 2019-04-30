@@ -4,6 +4,8 @@ var cache = {}
 // multiple times simultaneously.
 var receivers = {}
 
+var scriptUrl = document.currentScript.src
+
 // Attach a promise to a callback, that is settled when the callback is called.
 function promisify (cb) {
   var res
@@ -30,7 +32,7 @@ function load (index, cb) {
   }
 
   // get path relative to current script
-  var url = (new URL(load.b[index], document.currentScript.src)).href
+  var url = (new URL(load.b[index], scriptSrc)).href
 
   // TODO throw an error if we don't have the url
 
