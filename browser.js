@@ -29,7 +29,9 @@ function load (index, cb) {
     return cb.p
   }
 
-  var url = load.b[index]
+  // get path relative to current script
+  var url = (new URL(load.b[index], document.currentScript.src)).href
+
   // TODO throw an error if we don't have the url
 
   // Combine callbacks if another one was already registered.
