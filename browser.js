@@ -32,7 +32,7 @@ function load (index, cb) {
   }
 
   // get path relative to current script
-  var url = (new URL(load.b[index], scriptSrc)).href
+  var url = (new URL(load.b[index], scriptUrl)).href
 
   // TODO throw an error if we don't have the url
 
