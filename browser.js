@@ -4,20 +4,22 @@ var cache = {}
 // multiple times simultaneously.
 var receivers = {}
 
+function noop () {}
+
 // Attach a promise to a callback, that is settled when the callback is called.
 function promisify (cb) {
-  var res
-  var rej
-  var p = typeof Promise !== 'undefined' && new Promise(function (resolve, reject) {
+  var res = noop
+  var rej = noop
+  var promise = typeof Promise !== 'undefined' && new Promise(function (resolve, reject) {
     res = resolve
     rej = reject
   })
-  pcb.p = p
-  return pcb
-  function pcb (err, val) {
-    if (cb) cb(err, val)
+  promisifiedCb.p = promise
+  return promisifiedCb
+  function promisifiedCb (err, val) {
     if (err) rej(err)
     else res(val)
+    if (cb) cb(err, val)
   }
 }
 
