@@ -36,7 +36,7 @@
     "standard": "^10.0.3",
     "tap-diff": "^0.1.1",
     "tape": "^4.8.0",
-    "tape-run": "^3.0.4",
+    "tape-run": "^6.0.1",
     "uglify-es": "^3.3.7"
   },
   "homepage": "https://github.com/goto-bus-stop/split-require#readme",
