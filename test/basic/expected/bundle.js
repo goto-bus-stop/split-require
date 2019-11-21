@@ -4,9 +4,11 @@ require("split-require").b = {"2":"bundle.2.js"};
 var xyz = require('./xyz')
 var splitRequire = require('split-require')
 
-splitRequire(2, function (err, exports) {
-  console.log(xyz(10) + exports)
-})
+module.exports = function (cb) {
+  splitRequire(2, function (err, exports) {
+    cb(xyz(10) + exports)
+  })
+}
 
 },{"./xyz":4,"split-require":"split-require"}],4:[function(require,module,exports){
 module.exports = function xyz (num) {

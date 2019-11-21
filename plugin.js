@@ -106,6 +106,20 @@ function createSplitter (b, opts) {
     }
     return fs.createWriteStream(path.join(outputDir, bundleName))
   }
+  var writeManifest = typeof opts.manifest === 'function' ? opts.manifest : function (manifest, cb) {
+    var manifestPath = null
+    if (typeof opts.manifest === 'string') {
+      manifestPath = opts.manifest
+    } else if (!opts.manifest) {
+      return cb()
+    } else {
+      var outdir = opts.out || opts.dir
+      if (!outdir || outdir.indexOf('%f') !== -1) return cb() // Just don't write it I guess?
+      manifestPath = path.join(opts.out || opts.dir, 'split-require.json')
+    }
+
+    fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2), cb)
+  }
   var publicPath = opts.public || './'
 
   var rows = []
@@ -238,6 +252,14 @@ function createSplitter (b, opts) {
     runParallel(pipelines, function (err, mappings) {
       if (err) return cb(err)
       var sri = {}
+      var manifest = {
+        publicPath: publicPath,
+        bundles: mappings.reduce(function (obj, x) {
+          obj[x.filename] = x.modules
+          return obj
+        }, {})
+      }
+
       mappings = mappings.reduce(function (obj, x) {
         obj[x.entry] = path.join(publicPath, x.filename).replace(/\\/g, '/')
         if (x.integrity) sri[x.entry] = x.integrity
@@ -256,13 +278,23 @@ function createSplitter (b, opts) {
         self.push(row)
       })
 
-      cb(null)
+      writeManifest(manifest, cb)
     })
   }
 
   function createPipeline (entryId, depRows, cb) {
     var entry = getRow(entryId)
+    var currentModules = []
+    var recordModules = through.obj(function (rec, enc, next) {
+      if (rec.file) {
+        currentModules.push(typeof opts.manifest === 'string'
+          ? path.relative(path.dirname(opts.manifest), rec.file)
+          : rec.file)
+      }
+      next(null, rec)
+    })
     var pipeline = splicer.obj([
+      'record', [ recordModules ],
       'pack', [ pack({ raw: true }) ],
       'wrap', []
     ])
@@ -294,6 +326,7 @@ function createSplitter (b, opts) {
       cb(null, {
         entry: entryId,
         filename: basename,
+        modules: currentModules,
         integrity: opts.sri ? sri.value : null
       })
     }

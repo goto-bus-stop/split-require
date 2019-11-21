@@ -1,6 +1,8 @@
 var xyz = require('./xyz')
 var splitRequire = require('split-require')
 
-splitRequire('./dynamic', function (err, exports) {
-  console.log(xyz(10) + exports)
-})
+module.exports = function (cb) {
+  splitRequire('./dynamic', function (err, exports) {
+    cb(xyz(10) + exports)
+  })
+}

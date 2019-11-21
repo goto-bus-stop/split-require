@@ -7,13 +7,14 @@
   },
   "dependencies": {
     "acorn-node": "^1.1.0",
-    "browser-pack": "^6.0.2",
+    "browser-pack": "6.0.4",
     "caller-path": "^2.0.0",
     "convert-source-map": "^1.5.0",
     "dash-ast": "^1.0.0",
     "end-of-stream": "^1.4.0",
     "estree-is-require": "^1.0.0",
     "flush-write-stream": "^1.0.2",
+    "has-async-hooks": "^1.0.0",
     "labeled-stream-splicer": "^2.0.0",
     "object-delete-value": "^1.0.0",
     "outpipe": "^1.1.1",
@@ -30,11 +31,13 @@
     "factor-bundle": "^2.5.0",
     "has-object-spread": "^1.0.0",
     "mkdirp": "^0.5.1",
+    "proxyquire": "^2.0.1",
     "read-file-tree": "^1.1.0",
     "rimraf": "^2.6.2",
     "run-series": "^1.1.4",
     "standard": "^10.0.3",
     "tap-diff": "^0.1.1",
+    "tap-min": "^1.2.2",
     "tape": "^4.8.0",
     "tape-run": "^6.0.1",
     "uglify-es": "^3.3.7"
@@ -49,10 +52,11 @@
     "url": "git+https://github.com/goto-bus-stop/split-require.git"
   },
   "scripts": {
-    "test": "npm run test:lint && npm run test:tap && npm run test:browser",
+    "test": "npm run test:lint && npm run test:tap && npm run test:server && npm run test:browser",
     "test:lint": "standard",
     "test:tap": "tape test/test.js | tap-diff",
-    "test:browser": "browserify -p [ ./plugin --out ./test/browser/static ] -r ./browser:split-require test/browser | tape-run --static ./test/browser/static"
+    "test:server": "tape test/capture.js | tap-min",
+    "test:browser": "browserify -p [ ./plugin --out ./test/browser/static ] -r ./browser:split-require test/browser | tape-run --static ./test/browser/static | tap-diff"
   },
   "standard": {
     "ignore": [
