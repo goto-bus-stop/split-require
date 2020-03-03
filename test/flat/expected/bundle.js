@@ -1,10 +1,15 @@
-require=(function(_$expose,_$require){ _$expose.m = {}; _$expose.r = _$require;
-var _$module_split_require_mappings = {};
-_$require("split-require").b = {"1":"bundle.1.js","3":"bundle.3.js"};
-var _$c_4 = 30
+require = (function (require) {
+var exposedRequire = function exposedRequire(e,r){return exposedRequire.m.hasOwnProperty(e)?exposedRequire.m[e]:"function"!=typeof require||r?"function"==typeof exposedRequire.r?exposedRequire.r(e,1):void 0:require(e,1)};
+exposedRequire.m = {};
+exposedRequire.r = require;var createModuleFactory = function createModuleFactory(t){var e;return function(r){return e||t(e={exports:{},parent:r},e.exports),e.exports}};
+var _$c_4 = createModuleFactory(function (module, exports) {
+module.exports = 30
 
+});
+var _$module_split_require_mappings = {};
+require("split-require").b = {"1":"bundle.1.js","3":"bundle.3.js"};
 var _$app_2 = {};
-var splitRequire = _$require("split-require")
+var splitRequire = require("split-require")
 
 var nums = []
 var pending = 2
@@ -22,11 +27,12 @@ function onloaded (err, exports) {
 }
 
 function onready () {
-  nums.push(_$c_4)
+  nums.push(_$c_4({}))
   console.log(nums.reduce(add))
 }
 
 function add (a, b) { return a + b }
 
-_$expose.m[4] = _$c_4;
-return _$expose}(function r(e,n){return r.m.hasOwnProperty(e)?r.m[e]:"function"!=typeof require||n?"function"==typeof r.r?r.r(e,1):void 0:require(e,1)}, typeof require==="function"?require:void 0));
+Object.defineProperty(exposedRequire.m, 4, { get: function() { return _$c_4({}); }});
+return exposedRequire;
+}(typeof require === 'function' ? require : void 0));
