@@ -263,7 +263,7 @@ function createSplitter (b, opts) {
   function createPipeline (entryId, depRows, cb) {
     var entry = getRow(entryId)
     var pipeline = splicer.obj([
-      'pack', [ pack({ raw: true }) ],
+      'pack', [pack({ raw: true })],
       'wrap', []
     ])
 
