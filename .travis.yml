@@ -1,19 +1,17 @@
 language: node_js
+dist: xenial
 node_js:
   - stable
+  - '12'
   - '10'
   - '8'
   - '6'
   - '4'
-before_script:
-  - 'export DISPLAY=":99.0"'
-  - 'Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &'
 
-addons:
-  apt:
-    packages:
-      - 'xvfb'
+test:
+  - npm run test:lint
+  - npm run test:tap
+  - xvfb-run --auto-servernum npm run test:browser
 
-cache:
-  directories:
-    - ~/.npm
+services:
+  - xvfb
