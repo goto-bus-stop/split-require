@@ -8,7 +8,7 @@
   "dependencies": {
     "acorn-node": "^1.1.0",
     "browser-pack": "^6.0.2",
-    "caller-path": "^2.0.0",
+    "caller-path": "^3.0.0",
     "convert-source-map": "^1.5.0",
     "dash-ast": "^1.0.0",
     "end-of-stream": "^1.4.0",
