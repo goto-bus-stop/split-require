@@ -29,7 +29,7 @@
     "concat-stream": "^2.0.0",
     "factor-bundle": "^2.5.0",
     "has-object-spread": "^1.0.0",
-    "mkdirp": "^0.5.1",
+    "mkdirp": "^1.0.3",
     "read-file-tree": "^1.1.0",
     "rimraf": "^2.6.2",
     "run-series": "^1.1.4",
