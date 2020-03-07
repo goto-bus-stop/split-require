@@ -13,7 +13,7 @@
     "dash-ast": "^1.0.0",
     "end-of-stream": "^1.4.0",
     "estree-is-require": "^1.0.0",
-    "flush-write-stream": "^1.0.2",
+    "flush-write-stream": "^2.0.0",
     "labeled-stream-splicer": "^2.0.0",
     "object-delete-value": "^1.0.0",
     "outpipe": "^1.1.1",
