@@ -6,7 +6,7 @@
     "url": "https://github.com/goto-bus-stop/split-require/issues"
   },
   "dependencies": {
-    "acorn-node": "^1.1.0",
+    "acorn-node": "^2.0.0",
     "browser-pack": "^6.0.2",
     "caller-path": "^2.0.0",
     "convert-source-map": "^1.5.0",
