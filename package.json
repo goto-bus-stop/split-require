@@ -10,7 +10,7 @@
     "browser-pack": "^6.0.2",
     "caller-path": "^2.0.0",
     "convert-source-map": "^1.5.0",
-    "dash-ast": "^1.0.0",
+    "dash-ast": "^2.0.1",
     "end-of-stream": "^1.4.0",
     "estree-is-require": "^1.0.0",
     "flush-write-stream": "^2.0.0",
