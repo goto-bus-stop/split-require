@@ -1,0 +1,61 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    name: Run tests
+    strategy:
+      matrix:
+        node-version:
+          - '4.x'
+          - '6.x'
+          - '8.x'
+          - '10.x'
+          - '12.x'
+          - '14.x'
+          - '15.x'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+      - name: Install Node.js ${{matrix.node-version}}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{matrix.node-version}}
+      - name: Install dependencies
+        run: npm install
+      - name: Run tests
+        run: npm run test:tap
+
+  browser:
+    name: Run browser tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+      - name: Install Node.js ${{matrix.node-version}}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{matrix.node-version}}
+      - name: Install dependencies
+        run: npm install
+      - name: Run browser tests
+        uses: gabrielbb/xvfb-action@v1
+        with:
+          run: npm run test:browser
+
+  lint:
+    name: Standard Style
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+      - name: Install Node.js
+        uses: actions/setup-node@v1
+        with:
+            node-version: 14.x
+      - name: Install dependencies
+        run: npm install
+      - name: Check style
+        run: npm run test:lint
