@@ -1,0 +1,18 @@
+version: 2
+updates:
+- package-ecosystem: npm
+  directory: "/"
+  schedule:
+    interval: daily
+    time: "04:00"
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: caller-path
+    versions:
+    - ">= 3.a, < 4"
+  - dependency-name: rimraf
+    versions:
+    - "> 2.7.1"
+  - dependency-name: tape-run
+    versions:
+    - 8.0.0
